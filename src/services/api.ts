@@ -50,6 +50,17 @@ export const fetchAssetHistory = async (id: string): Promise<AssetHistory[]> => 
 
 export const sendChatMessage = async (message: string) => {
   try {
+    // First, fetch the current crypto data
+    const cryptoData = await fetchTopAssets();
+    
+    // Create a condensed version of the data for the context
+    const cryptoContext = cryptoData.map(asset => ({
+      name: asset.name,
+      symbol: asset.symbol,
+      price: Number(asset.priceUsd).toFixed(2),
+      change24h: Number(asset.changePercent24Hr).toFixed(2)
+    }));
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -61,7 +72,10 @@ export const sendChatMessage = async (message: string) => {
         messages: [
           {
             role: "system",
-            content: "You are a helpful assistant that provides information about cryptocurrencies based on the data available in our dashboard."
+            content: `You are a helpful assistant that provides information about cryptocurrencies. Here is the current data from our dashboard (prices in USD):
+            ${JSON.stringify(cryptoContext, null, 2)}
+            
+            Please use this real-time data to answer questions. Always mention the current price and 24h change when discussing specific cryptocurrencies.`
           },
           {
             role: "user",
