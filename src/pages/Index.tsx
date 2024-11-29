@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchTopAssets } from "@/services/api";
 import { Link } from "react-router-dom";
+import { ChatBot } from "@/components/ChatBot";
 
 const formatPrice = (price: string) => {
   return new Intl.NumberFormat("en-US", {
@@ -52,10 +53,7 @@ const Index = () => {
           </thead>
           <tbody>
             {assets?.map((asset) => (
-              <tr
-                key={asset.id}
-                className="hover:bg-gray-50"
-              >
+              <tr key={asset.id} className="hover:bg-gray-50">
                 <td className="border-2 border-black p-4">{asset.rank}</td>
                 <td className="border-2 border-black p-4">
                   <Link
@@ -86,6 +84,7 @@ const Index = () => {
           </tbody>
         </table>
       </div>
+      <ChatBot />
     </div>
   );
 };

@@ -47,3 +47,22 @@ export const fetchAssetHistory = async (id: string): Promise<AssetHistory[]> => 
     return [];
   }
 };
+
+export const sendChatMessage = async (message: string) => {
+  try {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ message }),
+    });
+    
+    if (!response.ok) throw new Error("Failed to get chat response");
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Chat error:", error);
+    throw error;
+  }
+};
