@@ -53,13 +53,30 @@ export const sendChatMessage = async (message: string) => {
     // First, fetch the current crypto data
     const cryptoData = await fetchTopAssets();
     
-    // Create a condensed version of the data for the context
+    // Create a detailed version of the data for the context
     const cryptoContext = cryptoData.map(asset => ({
       name: asset.name,
       symbol: asset.symbol,
       price: Number(asset.priceUsd).toFixed(2),
-      change24h: Number(asset.changePercent24Hr).toFixed(2)
+      change24h: Number(asset.changePercent24Hr).toFixed(2),
+      marketCap: Number(asset.marketCapUsd).toLocaleString(undefined, {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }),
+      volume24h: Number(asset.volumeUsd24Hr).toLocaleString(undefined, {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }),
+      supply: Number(asset.supply).toLocaleString(undefined, {
+        maximumFractionDigits: 0
+      })
     }));
+
+    console.log("Sending crypto context to OpenAI:", cryptoContext);
 
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -72,10 +89,17 @@ export const sendChatMessage = async (message: string) => {
         messages: [
           {
             role: "system",
-            content: `You are a helpful assistant that provides information about cryptocurrencies. Here is the current data from our dashboard (prices in USD):
+            content: `You are a helpful assistant that provides information about cryptocurrencies. Here is the current real-time data from our dashboard:
             ${JSON.stringify(cryptoContext, null, 2)}
             
-            Please use this real-time data to answer questions. Always mention the current price and 24h change when discussing specific cryptocurrencies.`
+            Please use this real-time data to answer questions. When discussing specific cryptocurrencies, always include:
+            - Current price
+            - 24h price change
+            - Market cap
+            - 24h trading volume
+            - Current supply
+            
+            Format numbers in a human-readable way and be precise with the data provided.`
           },
           {
             role: "user",
