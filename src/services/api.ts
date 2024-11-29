@@ -50,17 +50,35 @@ export const fetchAssetHistory = async (id: string): Promise<AssetHistory[]> => 
 
 export const sendChatMessage = async (message: string) => {
   try {
-    const response = await fetch("/api/chat", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "Authorization": `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
       },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful assistant that provides information about cryptocurrencies based on the data available in our dashboard."
+          },
+          {
+            role: "user",
+            content: message
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 150
+      }),
     });
     
-    if (!response.ok) throw new Error("Failed to get chat response");
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.statusText}`);
+    }
     
-    return await response.json();
+    const data = await response.json();
+    return { message: data.choices[0].message.content };
   } catch (error) {
     console.error("Chat error:", error);
     throw error;

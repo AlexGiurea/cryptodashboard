@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { Input } from "./ui/input";
 import { MessageCircle, Send, X } from "lucide-react";
 import { toast } from "sonner";
+import { sendChatMessage } from "@/services/api";
 
 interface Message {
   role: "user" | "assistant";
@@ -25,18 +26,8 @@ export const ChatBot = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ message: userMessage }),
-      });
-
-      if (!response.ok) throw new Error("Failed to get response");
-
-      const data = await response.json();
-      setMessages((prev) => [...prev, { role: "assistant", content: data.message }]);
+      const response = await sendChatMessage(userMessage);
+      setMessages((prev) => [...prev, { role: "assistant", content: response.message }]);
     } catch (error) {
       console.error("Chat error:", error);
       toast.error("Failed to get response from chatbot");
