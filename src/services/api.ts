@@ -64,6 +64,7 @@ export const sendChatMessage = async (message: string) => {
     
     // Create a detailed version of the data for the context
     const cryptoContext = cryptoData.map(asset => ({
+      rank: Number(asset.rank),
       name: asset.name,
       symbol: asset.symbol,
       price: Number(asset.priceUsd).toFixed(2),
@@ -98,17 +99,18 @@ export const sendChatMessage = async (message: string) => {
         messages: [
           {
             role: "system",
-            content: `You are a helpful assistant that provides information about cryptocurrencies. Here is the current real-time data from our dashboard:
-            ${JSON.stringify(cryptoContext, null, 2)}
+            content: `You are a helpful assistant that provides detailed information about cryptocurrencies. Here is the current real-time data from our dashboard, sorted by rank:
+            ${JSON.stringify(cryptoContext.sort((a, b) => a.rank - b.rank), null, 2)}
             
-            Please use this real-time data to answer questions. When discussing specific cryptocurrencies, always include:
+            Please use this real-time data to answer questions comprehensively. When discussing specific cryptocurrencies, always include:
+            - Rank in the market
             - Current price
             - 24h price change
             - Market cap
             - 24h trading volume
             - Current supply
             
-            Format numbers in a human-readable way and be precise with the data provided.`
+            Format numbers in a human-readable way and be precise with the data provided. Give detailed explanations and context when answering questions.`
           },
           {
             role: "user",
@@ -116,7 +118,7 @@ export const sendChatMessage = async (message: string) => {
           }
         ],
         temperature: 0.7,
-        max_tokens: 150
+        max_tokens: 500  // Increased from 150 to 500 for longer responses
       }),
     });
     
