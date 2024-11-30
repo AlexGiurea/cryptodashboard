@@ -76,7 +76,7 @@ export const fetchIndividualAsset = async (id: string): Promise<Asset | null> =>
   }
 };
 
-export const sendChatMessage = async (message: string) => {
+export const sendChatMessage = async (message: string, conversationHistory: { role: string; content: string }[] = []) => {
   try {
     const cryptoData = await fetchTopAssets();
     
@@ -121,8 +121,33 @@ export const sendChatMessage = async (message: string) => {
       })
     }));
 
-    console.log("Sending request to OpenAI with crypto context");
+    console.log("Sending request to OpenAI with conversation history");
     
+    const messages = [
+      {
+        role: "system",
+        content: `You are a helpful assistant that provides detailed information about cryptocurrencies. Here is the current real-time data from our dashboard, sorted by rank:
+        ${JSON.stringify(cryptoContext.sort((a, b) => a.rank - b.rank), null, 2)}
+        
+        You can display price charts for any cryptocurrency when users ask for them. When users request a chart, you should acknowledge that you're showing the chart and provide relevant analysis of the price data.
+        
+        Please use this real-time data to answer questions comprehensively. When discussing specific cryptocurrencies, always include:
+        - Rank in the market
+        - Current price
+        - 24h price change
+        - Market cap
+        - 24h trading volume
+        - Current supply
+        
+        Format numbers in a human-readable way and be precise with the data provided. Give detailed explanations and context when answering questions.`
+      },
+      ...conversationHistory,
+      {
+        role: "user",
+        content: message
+      }
+    ];
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -130,30 +155,8 @@ export const sendChatMessage = async (message: string) => {
         "Authorization": `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4o",
-        messages: [
-          {
-            role: "system",
-            content: `You are a helpful assistant that provides detailed information about cryptocurrencies. Here is the current real-time data from our dashboard, sorted by rank:
-            ${JSON.stringify(cryptoContext.sort((a, b) => a.rank - b.rank), null, 2)}
-            
-            You can display price charts for any cryptocurrency when users ask for them. When users request a chart, you should acknowledge that you're showing the chart and provide relevant analysis of the price data.
-            
-            Please use this real-time data to answer questions comprehensively. When discussing specific cryptocurrencies, always include:
-            - Rank in the market
-            - Current price
-            - 24h price change
-            - Market cap
-            - 24h trading volume
-            - Current supply
-            
-            Format numbers in a human-readable way and be precise with the data provided. Give detailed explanations and context when answering questions.`
-          },
-          {
-            role: "user",
-            content: message
-          }
-        ],
+        model: "gpt-4",
+        messages,
         temperature: 0.7,
         max_tokens: 500
       }),

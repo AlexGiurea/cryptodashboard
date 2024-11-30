@@ -28,12 +28,14 @@ export const ChatBot = () => {
 
     const userMessage = input.trim();
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
+    
+    const newUserMessage = { role: "user", content: userMessage };
+    setMessages(prev => [...prev, newUserMessage]);
     setIsLoading(true);
 
     try {
-      const response = await sendChatMessage(userMessage);
-      setMessages((prev) => [...prev, { 
+      const response = await sendChatMessage(userMessage, messages);
+      setMessages(prev => [...prev, { 
         role: "assistant", 
         content: response.message,
         chart: response.chart 
