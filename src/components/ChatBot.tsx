@@ -34,14 +34,16 @@ export const ChatBot = () => {
     setIsLoading(true);
 
     try {
-      // Only send the last 10 messages to prevent context length issues
       const recentMessages = messages.slice(-10);
       const response = await sendChatMessage(userMessage, recentMessages);
-      setMessages(prev => [...prev, { 
-        role: "assistant", 
+      
+      const newAssistantMessage: Message = {
+        role: "assistant",
         content: response.message,
-        chart: response.chart 
-      }]);
+        chart: response.chart
+      };
+      
+      setMessages(prev => [...prev, newAssistantMessage]);
     } catch (error) {
       console.error("Chat error:", error);
       toast.error("Failed to get response from chatbot");
@@ -51,10 +53,16 @@ export const ChatBot = () => {
   };
 
   const renderChart = (chartData: Message["chart"]) => {
-    if (!chartData) return null;
+    if (!chartData?.data || !Array.isArray(chartData.data) || chartData.data.length === 0) {
+      console.log("No valid chart data to render");
+      return null;
+    }
+
+    console.log("Rendering chart with data:", chartData);
 
     return (
-      <div className="w-full h-[200px] mt-2">
+      <div className="w-full h-[200px] mt-2 border-2 border-black p-2 bg-white">
+        <p className="text-sm font-bold mb-2">{chartData.title}</p>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData.data}>
             <XAxis 
@@ -65,13 +73,14 @@ export const ChatBot = () => {
             <YAxis 
               domain={["auto", "auto"]}
               stroke="#000000"
+              tickFormatter={(value) => `$${value.toLocaleString()}`}
             />
             <Tooltip
               contentStyle={{
                 backgroundColor: "#ffffff",
                 border: "2px solid #000000",
               }}
-              formatter={(value: any) => [`$${Number(value).toFixed(2)}`, "Price"]}
+              formatter={(value: any) => [`$${Number(value).toLocaleString()}`, "Price"]}
               labelFormatter={(label) => new Date(label).toLocaleDateString()}
             />
             <Line
@@ -123,7 +132,7 @@ export const ChatBot = () => {
                       : "border-2 border-black bg-[#FFE800]"
                   }`}
                 >
-                  {message.content}
+                  <div>{message.content}</div>
                   {message.chart && renderChart(message.chart)}
                 </div>
               </div>
