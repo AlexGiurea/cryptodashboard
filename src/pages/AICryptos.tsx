@@ -4,16 +4,16 @@ import { Link } from "react-router-dom";
 import type { Asset } from "@/services/api";
 
 const AI_RELATED_TOKENS = [
-  "injective-protocol", // INJ
-  "fetch-ai",          // FET
-  "singularitynet",    // AGIX
-  "ocean-protocol",    // OCEAN
-  "oasis",            // ROSE
-  "render",           // RNDR
-  "akash-network",    // AKT
-  "bittensor",        // TAO
-  "cortex",           // CTXC
-  "vectorspace"       // VXV
+  "injective",        // INJ (changed from injective-protocol)
+  "fetch",           // FET (changed from fetch-ai)
+  "singularitynet",  // AGIX
+  "ocean-protocol",  // OCEAN
+  "oasis-network",   // ROSE (changed from oasis)
+  "render-token",    // RNDR (changed from render)
+  "akash-network",   // AKT
+  "bittensor",       // TAO
+  "cortex",          // CTXC
+  "vxv"             // VXV (changed from vectorspace)
 ];
 
 const formatPrice = (price: string) => {
