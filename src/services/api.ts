@@ -24,8 +24,10 @@ export interface AssetHistory {
 
 export const fetchTopAssets = async (): Promise<Asset[]> => {
   try {
+    console.log("Fetching top assets...");
     const response = await fetch(`${BASE_URL}/assets?limit=100`);
     const data = await response.json();
+    console.log("Fetched top assets successfully:", data.data.length, "assets");
     return data.data;
   } catch (error) {
     console.error("Error fetching assets:", error);
@@ -36,10 +38,17 @@ export const fetchTopAssets = async (): Promise<Asset[]> => {
 
 export const fetchAssetHistory = async (id: string): Promise<AssetHistory[]> => {
   try {
+    console.log(`Fetching history for asset ${id}...`);
     const response = await fetch(
       `${BASE_URL}/assets/${id}/history?interval=h1`
     );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
     const data = await response.json();
+    console.log(`Fetched history successfully for ${id}:`, data.data.length, "data points");
     return data.data;
   } catch (error) {
     console.error("Error fetching asset history:", error);
