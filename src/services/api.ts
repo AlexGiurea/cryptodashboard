@@ -24,7 +24,7 @@ export interface AssetHistory {
 
 export const fetchTopAssets = async (): Promise<Asset[]> => {
   try {
-    const response = await fetch(`${BASE_URL}/assets?limit=50`);
+    const response = await fetch(`${BASE_URL}/assets?limit=100`);
     const data = await response.json();
     return data.data;
   } catch (error) {

@@ -39,7 +39,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen p-4 md:p-8">
-      <h1 className="mb-8 text-4xl font-bold">Top 50 Cryptocurrencies</h1>
+      <h1 className="mb-8 text-4xl font-bold">Top 100 Cryptocurrencies</h1>
       <div className="overflow-x-auto">
         <table className="w-full border-2 border-black">
           <thead>
