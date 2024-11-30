@@ -1,7 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchTopAssets } from "@/services/api";
 import { Link } from "react-router-dom";
-import { ChatBot } from "@/components/ChatBot";
+
+const AI_RELATED_TOKENS = [
+  "fetch-ai",
+  "singularitynet",
+  "ocean-protocol",
+  "oasis-network",
+  "numeraire",
+  "cortex",
+  "matrix-ai-network",
+  "deepbrain-chain",
+  "graphlinq-protocol",
+  "artificial-liquid-intelligence"
+];
 
 const formatPrice = (price: string) => {
   return new Intl.NumberFormat("en-US", {
@@ -22,12 +34,14 @@ const formatMarketCap = (marketCap: string) => {
   }).format(Number(marketCap));
 };
 
-const Index = () => {
+const AICryptos = () => {
   const { data: assets, isLoading } = useQuery({
     queryKey: ["assets"],
     queryFn: fetchTopAssets,
-    refetchInterval: 30000, // Refetch every 30 seconds
+    refetchInterval: 30000,
   });
+
+  const aiAssets = assets?.filter(asset => AI_RELATED_TOKENS.includes(asset.id)) || [];
 
   if (isLoading) {
     return (
@@ -40,9 +54,9 @@ const Index = () => {
   return (
     <div className="min-h-screen p-4 md:p-8">
       <div className="mb-8 flex items-center justify-between">
-        <h1 className="text-4xl font-bold">Top 100 Cryptocurrencies</h1>
-        <Link to="/ai-cryptos" className="neo-brutalist px-4 py-2">
-          View AI Cryptos
+        <h1 className="text-4xl font-bold">Top AI Cryptocurrencies</h1>
+        <Link to="/" className="neo-brutalist px-4 py-2">
+          View All Cryptos
         </Link>
       </div>
       <div className="overflow-x-auto">
@@ -57,7 +71,7 @@ const Index = () => {
             </tr>
           </thead>
           <tbody>
-            {assets?.map((asset) => (
+            {aiAssets.map((asset) => (
               <tr key={asset.id} className="hover:bg-gray-50">
                 <td className="border-2 border-black p-4">{asset.rank}</td>
                 <td className="border-2 border-black p-4">
@@ -89,9 +103,8 @@ const Index = () => {
           </tbody>
         </table>
       </div>
-      <ChatBot />
     </div>
   );
 };
 
-export default Index;
+export default AICryptos;
