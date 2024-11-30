@@ -81,6 +81,24 @@ export const sendChatMessage = async (message: string) => {
     // First, fetch the current crypto data
     const cryptoData = await fetchTopAssets();
     
+    // Check if the message is requesting a chart
+    const chartMatch = message.toLowerCase().match(/show (?:me )?(?:the )?(?:chart|graph|price) (?:for |of )?(\w+)/);
+    let chartData = null;
+    
+    if (chartMatch) {
+      const symbol = chartMatch[1].toUpperCase();
+      const asset = cryptoData.find(a => a.symbol.toLowerCase() === symbol.toLowerCase());
+      
+      if (asset) {
+        const history = await fetchAssetHistory(asset.id);
+        chartData = {
+          data: history,
+          type: "line" as const,
+          title: `${asset.name} (${asset.symbol}) Price Chart`
+        };
+      }
+    }
+
     // Create a detailed version of the data for the context
     const cryptoContext = cryptoData.map(asset => ({
       rank: Number(asset.rank),
@@ -114,7 +132,7 @@ export const sendChatMessage = async (message: string) => {
         "Authorization": `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo",
+        model: "gpt-4o",
         messages: [
           {
             role: "system",
@@ -137,7 +155,7 @@ export const sendChatMessage = async (message: string) => {
           }
         ],
         temperature: 0.7,
-        max_tokens: 500  // Increased from 150 to 500 for longer responses
+        max_tokens: 500
       }),
     });
     
@@ -146,7 +164,10 @@ export const sendChatMessage = async (message: string) => {
     }
     
     const data = await response.json();
-    return { message: data.choices[0].message.content };
+    return { 
+      message: data.choices[0].message.content,
+      chart: chartData
+    };
   } catch (error) {
     console.error("Chat error:", error);
     throw error;

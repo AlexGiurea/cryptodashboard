@@ -5,10 +5,16 @@ import { Input } from "./ui/input";
 import { MessageCircle, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { sendChatMessage } from "@/services/api";
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  chart?: {
+    data: any[];
+    type: "line";
+    title: string;
+  };
 }
 
 export const ChatBot = () => {
@@ -27,13 +33,54 @@ export const ChatBot = () => {
 
     try {
       const response = await sendChatMessage(userMessage);
-      setMessages((prev) => [...prev, { role: "assistant", content: response.message }]);
+      setMessages((prev) => [...prev, { 
+        role: "assistant", 
+        content: response.message,
+        chart: response.chart 
+      }]);
     } catch (error) {
       console.error("Chat error:", error);
       toast.error("Failed to get response from chatbot");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const renderChart = (chartData: Message["chart"]) => {
+    if (!chartData) return null;
+
+    return (
+      <div className="w-full h-[200px] mt-2">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartData.data}>
+            <XAxis 
+              dataKey="time" 
+              tickFormatter={(timestamp) => new Date(timestamp).toLocaleDateString()}
+              stroke="#000000"
+            />
+            <YAxis 
+              domain={["auto", "auto"]}
+              stroke="#000000"
+            />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: "#ffffff",
+                border: "2px solid #000000",
+              }}
+              formatter={(value: any) => [`$${Number(value).toFixed(2)}`, "Price"]}
+              labelFormatter={(label) => new Date(label).toLocaleDateString()}
+            />
+            <Line
+              type="monotone"
+              dataKey="priceUsd"
+              stroke="#FF1F8F"
+              strokeWidth={2}
+              dot={false}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    );
   };
 
   return (
@@ -73,6 +120,7 @@ export const ChatBot = () => {
                   }`}
                 >
                   {message.content}
+                  {message.chart && renderChart(message.chart)}
                 </div>
               </div>
             ))}
