@@ -29,12 +29,14 @@ export const ChatBot = () => {
     const userMessage = input.trim();
     setInput("");
     
-    const newUserMessage = { role: "user", content: userMessage };
+    const newUserMessage: Message = { role: "user", content: userMessage };
     setMessages(prev => [...prev, newUserMessage]);
     setIsLoading(true);
 
     try {
-      const response = await sendChatMessage(userMessage, messages);
+      // Only send the last 10 messages to prevent context length issues
+      const recentMessages = messages.slice(-10);
+      const response = await sendChatMessage(userMessage, recentMessages);
       setMessages(prev => [...prev, { 
         role: "assistant", 
         content: response.message,

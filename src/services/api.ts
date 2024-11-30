@@ -126,20 +126,20 @@ export const sendChatMessage = async (message: string, conversationHistory: { ro
     const messages = [
       {
         role: "system",
-        content: `You are a helpful assistant that provides detailed information about cryptocurrencies. Here is the current real-time data from our dashboard, sorted by rank:
-        ${JSON.stringify(cryptoContext.sort((a, b) => a.rank - b.rank), null, 2)}
+        content: `You are a helpful assistant that provides information about cryptocurrencies. Current data:
+        ${JSON.stringify(cryptoContext.slice(0, 20).sort((a, b) => a.rank - b.rank), null, 2)}
         
-        You can display price charts for any cryptocurrency when users ask for them. When users request a chart, you should acknowledge that you're showing the chart and provide relevant analysis of the price data.
+        You can display price charts when asked. Provide relevant analysis of price data.
         
-        Please use this real-time data to answer questions comprehensively. When discussing specific cryptocurrencies, always include:
-        - Rank in the market
-        - Current price
-        - 24h price change
+        Include for cryptocurrencies:
+        - Rank
+        - Price
+        - 24h change
         - Market cap
-        - 24h trading volume
-        - Current supply
+        - Volume
+        - Supply
         
-        Format numbers in a human-readable way and be precise with the data provided. Give detailed explanations and context when answering questions.`
+        Format numbers clearly and be precise.`
       },
       ...conversationHistory,
       {
