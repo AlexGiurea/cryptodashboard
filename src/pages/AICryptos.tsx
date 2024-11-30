@@ -4,15 +4,23 @@ import { Link } from "react-router-dom";
 
 const AI_RELATED_TOKENS = [
   "fetch-ai",
+  "render-token",
   "singularitynet",
   "ocean-protocol",
   "oasis-network",
   "numeraire",
+  "the-tao",
+  "injective",
+  "akash-network",
   "cortex",
   "matrix-ai-network",
   "deepbrain-chain",
   "graphlinq-protocol",
-  "artificial-liquid-intelligence"
+  "artificial-liquid-intelligence",
+  "bittensor",
+  "oraichain-token",
+  "agix",
+  "vectorspace"
 ];
 
 const formatPrice = (price: string) => {
