@@ -4,23 +4,15 @@ import { Link } from "react-router-dom";
 
 const AI_RELATED_TOKENS = [
   "fetch-ai",           // FET
-  "render-token",       // RNDR
-  "singularitynet",     // AGIX
-  "ocean-protocol",     // OCEAN
-  "oasis-network",      // ROSE
-  "numeraire",          // NMR
-  "the-tao",           // TAO
-  "injective",         // INJ
+  "render",            // RNDR
+  "singularitynet",    // AGIX
+  "ocean-protocol",    // OCEAN
+  "oasis",             // ROSE
+  "numeraire",         // NMR
+  "injective-protocol", // INJ
   "akash-network",     // AKT
   "cortex",            // CTXC
-  "matrix-ai-network", // MAN
-  "deepbrain-chain",   // DBC
-  "graphlinq-protocol", // GLQ
-  "artificial-liquid-intelligence", // ALI
-  "bittensor",         // TAO
-  "oraichain-token",   // ORAI
-  "agix",              // AGIX
-  "vectorspace"        // VXV
+  "singularity-net",   // AGIX
 ];
 
 const formatPrice = (price: string) => {
@@ -48,6 +40,9 @@ const AICryptos = () => {
     queryFn: fetchTopAssets,
     refetchInterval: 30000,
   });
+
+  console.log("Fetched assets:", assets?.length);
+  console.log("AI assets found:", assets?.filter(asset => AI_RELATED_TOKENS.includes(asset.id)).length);
 
   const aiAssets = assets?.filter(asset => AI_RELATED_TOKENS.includes(asset.id)) || [];
 
