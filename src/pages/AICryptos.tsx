@@ -1,22 +1,19 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchTopAssets } from "@/services/api";
+import { fetchIndividualAsset } from "@/services/api";
 import { Link } from "react-router-dom";
+import type { Asset } from "@/services/api";
 
 const AI_RELATED_TOKENS = [
-  "fetch-ai",           // FET
-  "render",            // RNDR
+  "injective-protocol", // INJ
+  "fetch-ai",          // FET
   "singularitynet",    // AGIX
   "ocean-protocol",    // OCEAN
   "oasis",            // ROSE
-  "numeraire",         // NMR
-  "injective-protocol", // INJ
-  "akash-network",     // AKT
-  "cortex",           // CTXC
+  "render",           // RNDR
+  "akash-network",    // AKT
   "bittensor",        // TAO
-  "oraichain",        // ORAI
-  "vectorspace",      // VXV
-  "graphlinq-protocol", // GLQ
-  "matrix-ai-network", // MAN
+  "cortex",           // CTXC
+  "vectorspace"       // VXV
 ];
 
 const formatPrice = (price: string) => {
@@ -39,18 +36,19 @@ const formatMarketCap = (marketCap: string) => {
 };
 
 const AICryptos = () => {
-  const { data: assets, isLoading } = useQuery({
-    queryKey: ["assets"],
-    queryFn: fetchTopAssets,
+  // Fetch all AI assets in parallel
+  const { data: aiAssets, isLoading } = useQuery({
+    queryKey: ["ai-assets"],
+    queryFn: async () => {
+      console.log("Fetching AI assets...");
+      const promises = AI_RELATED_TOKENS.map(id => fetchIndividualAsset(id));
+      const results = await Promise.all(promises);
+      const validResults = results.filter((asset): asset is Asset => asset !== null);
+      console.log("Fetched AI assets:", validResults.length);
+      return validResults.sort((a, b) => Number(a.rank) - Number(b.rank));
+    },
     refetchInterval: 30000,
   });
-
-  console.log("Fetched assets:", assets?.length);
-  console.log("AI assets found:", assets?.filter(asset => AI_RELATED_TOKENS.includes(asset.id)).length);
-  console.log("Available asset IDs:", assets?.map(asset => asset.id).join(", "));
-  console.log("Matching assets:", assets?.filter(asset => AI_RELATED_TOKENS.includes(asset.id)).map(asset => asset.id));
-
-  const aiAssets = assets?.filter(asset => AI_RELATED_TOKENS.includes(asset.id)) || [];
 
   if (isLoading) {
     return (
@@ -80,7 +78,7 @@ const AICryptos = () => {
             </tr>
           </thead>
           <tbody>
-            {aiAssets.map((asset) => (
+            {aiAssets?.map((asset) => (
               <tr key={asset.id} className="hover:bg-gray-50">
                 <td className="border-2 border-black p-4">{asset.rank}</td>
                 <td className="border-2 border-black p-4">

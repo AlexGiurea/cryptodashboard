@@ -57,6 +57,25 @@ export const fetchAssetHistory = async (id: string): Promise<AssetHistory[]> => 
   }
 };
 
+export const fetchIndividualAsset = async (id: string): Promise<Asset | null> => {
+  try {
+    console.log(`Fetching individual asset ${id}...`);
+    const response = await fetch(`${BASE_URL}/assets/${id}`);
+    
+    if (!response.ok) {
+      console.error(`Failed to fetch asset ${id}: ${response.status}`);
+      return null;
+    }
+    
+    const data = await response.json();
+    console.log(`Successfully fetched asset ${id}:`, data.data);
+    return data.data;
+  } catch (error) {
+    console.error(`Error fetching asset ${id}:`, error);
+    return null;
+  }
+};
+
 export const sendChatMessage = async (message: string) => {
   try {
     // First, fetch the current crypto data
