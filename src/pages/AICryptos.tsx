@@ -3,24 +3,24 @@ import { fetchTopAssets } from "@/services/api";
 import { Link } from "react-router-dom";
 
 const AI_RELATED_TOKENS = [
-  "fetch-ai",
-  "render-token",
-  "singularitynet",
-  "ocean-protocol",
-  "oasis-network",
-  "numeraire",
-  "the-tao",
-  "injective",
-  "akash-network",
-  "cortex",
-  "matrix-ai-network",
-  "deepbrain-chain",
-  "graphlinq-protocol",
-  "artificial-liquid-intelligence",
-  "bittensor",
-  "oraichain-token",
-  "agix",
-  "vectorspace"
+  "fetch-ai",           // FET
+  "render-token",       // RNDR
+  "singularitynet",     // AGIX
+  "ocean-protocol",     // OCEAN
+  "oasis-network",      // ROSE
+  "numeraire",          // NMR
+  "the-tao",           // TAO
+  "injective",         // INJ
+  "akash-network",     // AKT
+  "cortex",            // CTXC
+  "matrix-ai-network", // MAN
+  "deepbrain-chain",   // DBC
+  "graphlinq-protocol", // GLQ
+  "artificial-liquid-intelligence", // ALI
+  "bittensor",         // TAO
+  "oraichain-token",   // ORAI
+  "agix",              // AGIX
+  "vectorspace"        // VXV
 ];
 
 const formatPrice = (price: string) => {
