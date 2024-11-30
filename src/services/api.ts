@@ -78,10 +78,8 @@ export const fetchIndividualAsset = async (id: string): Promise<Asset | null> =>
 
 export const sendChatMessage = async (message: string) => {
   try {
-    // First, fetch the current crypto data
     const cryptoData = await fetchTopAssets();
     
-    // Check if the message is requesting a chart
     const chartMatch = message.toLowerCase().match(/show (?:me )?(?:the )?(?:chart|graph|price) (?:for |of )?(\w+)/);
     let chartData = null;
     
@@ -90,6 +88,7 @@ export const sendChatMessage = async (message: string) => {
       const asset = cryptoData.find(a => a.symbol.toLowerCase() === symbol.toLowerCase());
       
       if (asset) {
+        console.log(`Fetching chart data for ${asset.name} (${asset.symbol})`);
         const history = await fetchAssetHistory(asset.id);
         chartData = {
           data: history,
@@ -99,7 +98,6 @@ export const sendChatMessage = async (message: string) => {
       }
     }
 
-    // Create a detailed version of the data for the context
     const cryptoContext = cryptoData.map(asset => ({
       rank: Number(asset.rank),
       name: asset.name,
@@ -123,8 +121,8 @@ export const sendChatMessage = async (message: string) => {
       })
     }));
 
-    console.log("Sending crypto context to OpenAI:", cryptoContext);
-
+    console.log("Sending request to OpenAI with crypto context");
+    
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -138,6 +136,8 @@ export const sendChatMessage = async (message: string) => {
             role: "system",
             content: `You are a helpful assistant that provides detailed information about cryptocurrencies. Here is the current real-time data from our dashboard, sorted by rank:
             ${JSON.stringify(cryptoContext.sort((a, b) => a.rank - b.rank), null, 2)}
+            
+            You can display price charts for any cryptocurrency when users ask for them. When users request a chart, you should acknowledge that you're showing the chart and provide relevant analysis of the price data.
             
             Please use this real-time data to answer questions comprehensively. When discussing specific cryptocurrencies, always include:
             - Rank in the market
