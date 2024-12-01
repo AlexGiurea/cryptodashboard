@@ -34,14 +34,20 @@ export const ChatBot = () => {
     setIsLoading(true);
 
     try {
+      console.log("Sending chat message:", userMessage);
       const recentMessages = messages.slice(-5);
       const response = await sendChatMessage(userMessage, recentMessages);
+      console.log("Received chat response:", response);
       
       const newAssistantMessage: Message = {
         role: "assistant",
         content: response.message,
         chart: response.chart
       };
+      
+      if (response.chart) {
+        console.log("Chart data received:", response.chart);
+      }
       
       setMessages(prev => [...prev, newAssistantMessage]);
     } catch (error) {
@@ -54,15 +60,15 @@ export const ChatBot = () => {
 
   const renderChart = (chartData: Message["chart"]) => {
     if (!chartData?.data || !Array.isArray(chartData.data) || chartData.data.length === 0) {
-      console.log("No valid chart data to render");
+      console.log("Invalid chart data:", chartData);
       return null;
     }
 
     console.log("Rendering chart with data:", chartData);
 
     return (
-      <div className="w-full h-[200px] mt-2 border-2 border-black p-2 bg-white">
-        <p className="text-sm font-bold mb-2">{chartData.title}</p>
+      <div className="w-full h-[300px] mt-4 border-2 border-black p-4 bg-white rounded-lg">
+        <p className="text-lg font-bold mb-4">{chartData.title}</p>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData.data}>
             <XAxis 
@@ -79,6 +85,8 @@ export const ChatBot = () => {
               contentStyle={{
                 backgroundColor: "#ffffff",
                 border: "2px solid #000000",
+                borderRadius: "4px",
+                padding: "8px"
               }}
               formatter={(value: any) => [`$${Number(value).toLocaleString()}`, "Price"]}
               labelFormatter={(label) => new Date(label).toLocaleDateString()}
@@ -89,6 +97,7 @@ export const ChatBot = () => {
               stroke="#FF1F8F"
               strokeWidth={2}
               dot={false}
+              activeDot={{ r: 6 }}
             />
           </LineChart>
         </ResponsiveContainer>
