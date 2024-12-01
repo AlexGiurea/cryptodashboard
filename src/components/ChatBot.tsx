@@ -34,7 +34,7 @@ export const ChatBot = () => {
     setIsLoading(true);
 
     try {
-      const recentMessages = messages.slice(-10);
+      const recentMessages = messages.slice(-5);
       const response = await sendChatMessage(userMessage, recentMessages);
       
       const newAssistantMessage: Message = {

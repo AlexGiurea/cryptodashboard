@@ -98,6 +98,7 @@ export const sendChatMessage = async (message: string, conversationHistory: { ro
       }
     }
 
+    // Create a simplified context with current market data
     const cryptoContext = cryptoData.map(asset => ({
       rank: Number(asset.rank),
       name: asset.name,
@@ -109,39 +110,22 @@ export const sendChatMessage = async (message: string, conversationHistory: { ro
         currency: 'USD',
         minimumFractionDigits: 0,
         maximumFractionDigits: 0
-      }),
-      volume24h: Number(asset.volumeUsd24Hr).toLocaleString(undefined, {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      }),
-      supply: Number(asset.supply).toLocaleString(undefined, {
-        maximumFractionDigits: 0
       })
     }));
 
-    console.log("Sending request to OpenAI with conversation history");
+    console.log("Sending request to OpenAI with market data context");
     
     const messages = [
       {
         role: "system",
-        content: `You are a helpful assistant that provides information about cryptocurrencies. Current data:
-        ${JSON.stringify(cryptoContext.slice(0, 20).sort((a, b) => a.rank - b.rank), null, 2)}
+        content: `You are a helpful cryptocurrency assistant. Here is the current market data for the top cryptocurrencies:
+        ${JSON.stringify(cryptoContext.slice(0, 20), null, 2)}
         
-        You can display price charts when asked. Provide relevant analysis of price data.
-        
-        Include for cryptocurrencies:
-        - Rank
-        - Price
-        - 24h change
-        - Market cap
-        - Volume
-        - Supply
-        
-        Format numbers clearly and be precise.`
+        When asked about specific cryptocurrencies, provide information from this data.
+        Format numbers clearly and include rank, price, 24h change, and market cap when available.
+        If asked to show a chart, one will be displayed automatically - acknowledge this in your response.`
       },
-      ...conversationHistory,
+      ...conversationHistory.slice(-5), // Only keep last 5 messages to prevent token limit
       {
         role: "user",
         content: message
@@ -167,6 +151,8 @@ export const sendChatMessage = async (message: string, conversationHistory: { ro
     }
     
     const data = await response.json();
+    console.log("Received response from OpenAI:", data.choices[0].message.content);
+    
     return { 
       message: data.choices[0].message.content,
       chart: chartData
