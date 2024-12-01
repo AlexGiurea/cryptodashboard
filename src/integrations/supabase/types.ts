@@ -9,7 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      crypto_transactions: {
+        Row: {
+          coin_name: string
+          coin_status_sector: string | null
+          crypto_symbol: string
+          id: number
+          price_of_token_at_moment: string | null
+          result_of_acquisition: string
+          sum_in_token: number | null
+          sum_in_usd: number | null
+          transaction_date: string | null
+          transaction_platform: string | null
+        }
+        Insert: {
+          coin_name: string
+          coin_status_sector?: string | null
+          crypto_symbol: string
+          id?: number
+          price_of_token_at_moment?: string | null
+          result_of_acquisition: string
+          sum_in_token?: number | null
+          sum_in_usd?: number | null
+          transaction_date?: string | null
+          transaction_platform?: string | null
+        }
+        Update: {
+          coin_name?: string
+          coin_status_sector?: string | null
+          crypto_symbol?: string
+          id?: number
+          price_of_token_at_moment?: string | null
+          result_of_acquisition?: string
+          sum_in_token?: number | null
+          sum_in_usd?: number | null
+          transaction_date?: string | null
+          transaction_platform?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchTopAssets } from "@/services/api";
 import { Link } from "react-router-dom";
 import { ChatBot } from "@/components/ChatBot";
+import { FileText } from "lucide-react";
 
 const formatPrice = (price: string) => {
   return new Intl.NumberFormat("en-US", {
@@ -41,9 +42,15 @@ const Index = () => {
     <div className="min-h-screen p-4 md:p-8">
       <div className="mb-8 flex items-center justify-between">
         <h1 className="text-4xl font-bold">Top 100 Cryptocurrencies</h1>
-        <Link to="/ai-cryptos" className="neo-brutalist px-4 py-2">
-          View AI Cryptos
-        </Link>
+        <div className="flex gap-4">
+          <Link to="/transactions" className="neo-brutalist flex items-center gap-2 px-4 py-2">
+            <FileText className="h-5 w-5" />
+            My Transactions
+          </Link>
+          <Link to="/ai-cryptos" className="neo-brutalist px-4 py-2">
+            View AI Cryptos
+          </Link>
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full border-2 border-black">
