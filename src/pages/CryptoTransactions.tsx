@@ -2,7 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { FileText } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Transaction {
   "Coin Name": string;
@@ -17,6 +17,7 @@ interface Transaction {
 }
 
 const CryptoTransactions = () => {
+  const navigate = useNavigate();
   const { data: transactions, isLoading, error } = useQuery({
     queryKey: ["crypto-ledger"],
     queryFn: async () => {
@@ -46,8 +47,13 @@ const CryptoTransactions = () => {
     },
   });
 
+  const handleCoinClick = (coinName: string) => {
+    // Convert coin name to lowercase and replace spaces with hyphens for URL
+    const coinId = coinName.toLowerCase().replace(/\s+/g, '-');
+    navigate(`/asset/${coinId}`);
+  };
+
   if (error) {
-    console.error("Error in useQuery:", error);
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="neo-brutalist-pink px-6 py-3 text-xl">Error loading transactions. Please check the console.</div>
@@ -77,41 +83,51 @@ const CryptoTransactions = () => {
   return (
     <div className="min-h-screen p-4 md:p-8">
       <h1 className="mb-8 text-4xl font-bold">Crypto Transactions Ledger</h1>
-      <ScrollArea className="h-[800px] rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Coin</TableHead>
-              <TableHead>Symbol</TableHead>
-              <TableHead>Acquisition Type</TableHead>
-              <TableHead>Token Amount</TableHead>
-              <TableHead>USD Amount</TableHead>
-              <TableHead>Token Price</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Platform</TableHead>
-              <TableHead>Sector</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions?.map((tx, index) => {
-              console.log("Rendering transaction:", tx);
-              return (
-                <TableRow key={index}>
-                  <TableCell>{tx["Coin Name"]}</TableCell>
-                  <TableCell>{tx["Crypto symbol"]}</TableCell>
-                  <TableCell>{tx["Result of acquisition"]}</TableCell>
-                  <TableCell>{tx["Sum (in token)"]}</TableCell>
-                  <TableCell>${tx["Sum (in USD)"]}</TableCell>
-                  <TableCell>{tx["Price of token at the moment"]}</TableCell>
-                  <TableCell>{tx["Transaction Date"]}</TableCell>
-                  <TableCell>{tx["Transaction platform"]}</TableCell>
-                  <TableCell>{tx["Coin status/sector"]}</TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </ScrollArea>
+      <div className="neo-brutalist bg-white">
+        <ScrollArea className="h-[800px]">
+          <Table>
+            <TableHeader className="bg-[#FFE800] sticky top-0">
+              <TableRow className="hover:bg-[#FFE800]/90">
+                <TableHead className="border-2 border-black font-bold">Coin</TableHead>
+                <TableHead className="border-2 border-black font-bold">Symbol</TableHead>
+                <TableHead className="border-2 border-black font-bold">Type</TableHead>
+                <TableHead className="border-2 border-black font-bold">Token Amount</TableHead>
+                <TableHead className="border-2 border-black font-bold">USD Amount</TableHead>
+                <TableHead className="border-2 border-black font-bold">Token Price</TableHead>
+                <TableHead className="border-2 border-black font-bold">Date</TableHead>
+                <TableHead className="border-2 border-black font-bold">Platform</TableHead>
+                <TableHead className="border-2 border-black font-bold">Sector</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {transactions?.map((tx, index) => {
+                console.log("Rendering transaction:", tx);
+                return (
+                  <TableRow 
+                    key={index} 
+                    className="hover:bg-gray-50 border-b-2 border-black"
+                  >
+                    <TableCell 
+                      className="border-x-2 border-black font-bold cursor-pointer hover:text-[#FF1F8F] transition-colors"
+                      onClick={() => handleCoinClick(tx["Coin Name"])}
+                    >
+                      {tx["Coin Name"]}
+                    </TableCell>
+                    <TableCell className="border-x-2 border-black">{tx["Crypto symbol"]}</TableCell>
+                    <TableCell className="border-x-2 border-black">{tx["Result of acquisition"]}</TableCell>
+                    <TableCell className="border-x-2 border-black">{tx["Sum (in token)"]}</TableCell>
+                    <TableCell className="border-x-2 border-black">${tx["Sum (in USD)"]}</TableCell>
+                    <TableCell className="border-x-2 border-black">{tx["Price of token at the moment"]}</TableCell>
+                    <TableCell className="border-x-2 border-black">{tx["Transaction Date"]}</TableCell>
+                    <TableCell className="border-x-2 border-black">{tx["Transaction platform"]}</TableCell>
+                    <TableCell className="border-x-2 border-black">{tx["Coin status/sector"]}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </ScrollArea>
+      </div>
     </div>
   );
 };
