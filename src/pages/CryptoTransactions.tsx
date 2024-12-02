@@ -5,28 +5,30 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { FileText } from "lucide-react";
 
 interface Transaction {
-  id: number;
-  coin_name: string;
-  crypto_symbol: string;
-  result_of_acquisition: string;
-  sum_in_token: number;
-  sum_in_usd: number;
-  price_of_token_at_moment: string;
-  transaction_date: string;
-  transaction_platform: string;
-  coin_status_sector: string;
+  "Coin Name": string;
+  "Crypto symbol": string;
+  "Result of acquisition": string;
+  "Sum (in token)": number;
+  "Sum (in USD)": number;
+  "Price of token at the moment": string;
+  "Transaction Date": string;
+  "Transaction platform": string;
+  "Coin status/sector": string;
 }
 
 const CryptoTransactions = () => {
   const { data: transactions, isLoading } = useQuery({
-    queryKey: ["crypto-transactions"],
+    queryKey: ["crypto-ledger"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("crypto_transactions")
+        .from("Crypto_Ledger")
         .select("*")
-        .order("transaction_date", { ascending: false });
+        .order("Transaction Date", { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching from Crypto_Ledger:", error);
+        throw error;
+      }
       return data as Transaction[];
     },
   });
@@ -58,17 +60,17 @@ const CryptoTransactions = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transactions?.map((tx) => (
-              <TableRow key={tx.id}>
-                <TableCell>{tx.coin_name}</TableCell>
-                <TableCell>{tx.crypto_symbol}</TableCell>
-                <TableCell>{tx.result_of_acquisition}</TableCell>
-                <TableCell>{tx.sum_in_token}</TableCell>
-                <TableCell>${tx.sum_in_usd}</TableCell>
-                <TableCell>{tx.price_of_token_at_moment}</TableCell>
-                <TableCell>{new Date(tx.transaction_date).toLocaleDateString()}</TableCell>
-                <TableCell>{tx.transaction_platform}</TableCell>
-                <TableCell>{tx.coin_status_sector}</TableCell>
+            {transactions?.map((tx, index) => (
+              <TableRow key={index}>
+                <TableCell>{tx["Coin Name"]}</TableCell>
+                <TableCell>{tx["Crypto symbol"]}</TableCell>
+                <TableCell>{tx["Result of acquisition"]}</TableCell>
+                <TableCell>{tx["Sum (in token)"]}</TableCell>
+                <TableCell>${tx["Sum (in USD)"]}</TableCell>
+                <TableCell>{tx["Price of token at the moment"]}</TableCell>
+                <TableCell>{tx["Transaction Date"]}</TableCell>
+                <TableCell>{tx["Transaction platform"]}</TableCell>
+                <TableCell>{tx["Coin status/sector"]}</TableCell>
               </TableRow>
             ))}
           </TableBody>

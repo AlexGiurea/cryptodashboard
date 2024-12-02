@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      Crypto_Ledger: {
+        Row: {
+          "Coin Name": string | null
+          "Coin status/sector": string | null
+          "Crypto symbol": string | null
+          "Price of token at the moment": string | null
+          "Result of acquisition": string | null
+          "Sum (in token)": number | null
+          "Sum (in USD)": number | null
+          "Transaction Date": string | null
+          "Transaction platform": string | null
+        }
+        Insert: {
+          "Coin Name"?: string | null
+          "Coin status/sector"?: string | null
+          "Crypto symbol"?: string | null
+          "Price of token at the moment"?: string | null
+          "Result of acquisition"?: string | null
+          "Sum (in token)"?: number | null
+          "Sum (in USD)"?: number | null
+          "Transaction Date"?: string | null
+          "Transaction platform"?: string | null
+        }
+        Update: {
+          "Coin Name"?: string | null
+          "Coin status/sector"?: string | null
+          "Crypto symbol"?: string | null
+          "Price of token at the moment"?: string | null
+          "Result of acquisition"?: string | null
+          "Sum (in token)"?: number | null
+          "Sum (in USD)"?: number | null
+          "Transaction Date"?: string | null
+          "Transaction platform"?: string | null
+        }
+        Relationships: []
+      }
       crypto_transactions: {
         Row: {
           coin_name: string
