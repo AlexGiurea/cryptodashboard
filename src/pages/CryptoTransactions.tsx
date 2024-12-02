@@ -26,9 +26,19 @@ const CryptoTransactions = () => {
         .select("*")
         .order("Transaction Date", { ascending: false });
 
+      // Log the raw response for debugging
+      console.log("Supabase response:", { data, error });
+
       if (error) {
         console.error("Error fetching from Crypto_Ledger:", error);
         throw error;
+      }
+      
+      if (!data || data.length === 0) {
+        console.log("No data returned from Crypto_Ledger table. Please check:");
+        console.log("1. Table name is correct (case-sensitive)");
+        console.log("2. RLS policies are not blocking access");
+        console.log("3. Data exists in the table");
       }
       
       console.log("Successfully fetched transactions:", data);
