@@ -17,9 +17,10 @@ interface Transaction {
 }
 
 const CryptoTransactions = () => {
-  const { data: transactions, isLoading } = useQuery({
+  const { data: transactions, isLoading, error } = useQuery({
     queryKey: ["crypto-ledger"],
     queryFn: async () => {
+      console.log("Fetching transactions from Crypto_Ledger...");
       const { data, error } = await supabase
         .from("Crypto_Ledger")
         .select("*")
@@ -29,14 +30,36 @@ const CryptoTransactions = () => {
         console.error("Error fetching from Crypto_Ledger:", error);
         throw error;
       }
+      
+      console.log("Successfully fetched transactions:", data);
       return data as Transaction[];
     },
   });
+
+  if (error) {
+    console.error("Error in useQuery:", error);
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="neo-brutalist-pink px-6 py-3 text-xl">Error loading transactions. Please check the console.</div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="neo-brutalist-pink px-6 py-3 text-xl">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!transactions || transactions.length === 0) {
+    return (
+      <div className="min-h-screen p-4 md:p-8">
+        <h1 className="mb-8 text-4xl font-bold">Crypto Transactions Ledger</h1>
+        <div className="flex items-center justify-center h-[400px]">
+          <div className="text-xl text-gray-500">No transactions found in the database.</div>
+        </div>
       </div>
     );
   }
@@ -60,19 +83,22 @@ const CryptoTransactions = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {transactions?.map((tx, index) => (
-              <TableRow key={index}>
-                <TableCell>{tx["Coin Name"]}</TableCell>
-                <TableCell>{tx["Crypto symbol"]}</TableCell>
-                <TableCell>{tx["Result of acquisition"]}</TableCell>
-                <TableCell>{tx["Sum (in token)"]}</TableCell>
-                <TableCell>${tx["Sum (in USD)"]}</TableCell>
-                <TableCell>{tx["Price of token at the moment"]}</TableCell>
-                <TableCell>{tx["Transaction Date"]}</TableCell>
-                <TableCell>{tx["Transaction platform"]}</TableCell>
-                <TableCell>{tx["Coin status/sector"]}</TableCell>
-              </TableRow>
-            ))}
+            {transactions?.map((tx, index) => {
+              console.log("Rendering transaction:", tx);
+              return (
+                <TableRow key={index}>
+                  <TableCell>{tx["Coin Name"]}</TableCell>
+                  <TableCell>{tx["Crypto symbol"]}</TableCell>
+                  <TableCell>{tx["Result of acquisition"]}</TableCell>
+                  <TableCell>{tx["Sum (in token)"]}</TableCell>
+                  <TableCell>${tx["Sum (in USD)"]}</TableCell>
+                  <TableCell>{tx["Price of token at the moment"]}</TableCell>
+                  <TableCell>{tx["Transaction Date"]}</TableCell>
+                  <TableCell>{tx["Transaction platform"]}</TableCell>
+                  <TableCell>{tx["Coin status/sector"]}</TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </ScrollArea>
