@@ -3,6 +3,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 
 interface Transaction {
   "Coin Name": string;
@@ -82,8 +84,17 @@ const CryptoTransactions = () => {
 
   return (
     <div className="min-h-screen p-4 md:p-8">
-      <h1 className="mb-8 text-4xl font-bold">Crypto Transactions Ledger</h1>
-      <div className="neo-brutalist bg-white">
+      <div className="mb-8 flex items-center justify-between">
+        <h1 className="text-4xl font-bold">Crypto Transactions Ledger</h1>
+        <Button 
+          onClick={() => navigate('/')} 
+          className="neo-brutalist flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Top Cryptos
+        </Button>
+      </div>
+      <div className="neo-brutalist bg-white border-2 border-black">
         <ScrollArea className="h-[800px]">
           <Table>
             <TableHeader className="bg-[#FFE800] sticky top-0">
@@ -99,13 +110,13 @@ const CryptoTransactions = () => {
                 <TableHead className="border-2 border-black font-bold">Sector</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <TableBody className="border-2 border-black">
               {transactions?.map((tx, index) => {
                 console.log("Rendering transaction:", tx);
                 return (
                   <TableRow 
                     key={index} 
-                    className="hover:bg-gray-50 border-b-2 border-black"
+                    className="hover:bg-gray-50 border-b-2 border-black last:border-b-0"
                   >
                     <TableCell 
                       className="border-x-2 border-black font-bold cursor-pointer hover:text-[#FF1F8F] transition-colors"
