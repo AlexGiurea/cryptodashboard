@@ -26,14 +26,28 @@ export const usePortfolioStats = (transactions: Transaction[] | undefined) => {
       // Calculate current value based on real-time prices
       let currentValue = 0;
       for (const tx of transactions) {
-        const coinApiId = getCoinApiId(tx["Coin Name"]);
-        console.log(`Fetching price for ${tx["Coin Name"]} using API ID: ${coinApiId}`);
-        
-        const asset = await fetchIndividualAsset(coinApiId);
-        if (asset) {
-          const currentPrice = parseFloat(asset.priceUsd);
+        try {
+          const coinApiId = getCoinApiId(tx["Coin Name"]);
+          console.log(`Fetching price for ${tx["Coin Name"]} using API ID: ${coinApiId}`);
+          
+          const asset = await fetchIndividualAsset(coinApiId);
+          if (asset) {
+            const currentPrice = parseFloat(asset.priceUsd);
+            const tokenAmount = tx["Sum (in token)"] || 0;
+            currentValue += currentPrice * tokenAmount;
+          } else {
+            // If the asset is not found in CoinCap API, use the original transaction price
+            console.log(`Asset ${tx["Coin Name"]} not found in CoinCap API, using original transaction price`);
+            const originalPrice = parseFloat(tx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
+            const tokenAmount = tx["Sum (in token)"] || 0;
+            currentValue += originalPrice * tokenAmount;
+          }
+        } catch (error) {
+          console.error(`Error fetching price for ${tx["Coin Name"]}:`, error);
+          // Use original transaction price as fallback
+          const originalPrice = parseFloat(tx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
           const tokenAmount = tx["Sum (in token)"] || 0;
-          currentValue += currentPrice * tokenAmount;
+          currentValue += originalPrice * tokenAmount;
         }
       }
 

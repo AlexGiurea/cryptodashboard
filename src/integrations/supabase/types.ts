@@ -11,7 +11,7 @@ export type Database = {
     Tables: {
       Crypto_Ledger: {
         Row: {
-          "Coin Name": string | null
+          "Coin Name": string
           "Coin status/sector": string | null
           "Crypto symbol": string | null
           "Price of token at the moment": string | null
@@ -22,7 +22,7 @@ export type Database = {
           "Transaction platform": string | null
         }
         Insert: {
-          "Coin Name"?: string | null
+          "Coin Name": string
           "Coin status/sector"?: string | null
           "Crypto symbol"?: string | null
           "Price of token at the moment"?: string | null
@@ -33,7 +33,7 @@ export type Database = {
           "Transaction platform"?: string | null
         }
         Update: {
-          "Coin Name"?: string | null
+          "Coin Name"?: string
           "Coin status/sector"?: string | null
           "Crypto symbol"?: string | null
           "Price of token at the moment"?: string | null
