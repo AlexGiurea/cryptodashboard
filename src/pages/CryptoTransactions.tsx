@@ -5,34 +5,12 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { useEffect, useState } from "react";
-import { fetchIndividualAsset } from "@/services/api";
-
-interface Transaction {
-  "Coin Name": string;
-  "Crypto symbol": string;
-  "Result of acquisition": string;
-  "Sum (in token)": number;
-  "Sum (in USD)": number;
-  "Price of token at the moment": string;
-  "Transaction Date": string;
-  "Transaction platform": string;
-  "Coin status/sector": string;
-}
-
-interface PortfolioStats {
-  totalAllocated: number;
-  currentValue: number;
-  percentageChange: number;
-}
+import { Transaction } from "@/types/crypto";
+import { usePortfolioStats } from "@/hooks/usePortfolioStats";
+import { getCoinApiId } from "@/utils/coinIdMappings";
 
 const CryptoTransactions = () => {
   const navigate = useNavigate();
-  const [portfolioStats, setPortfolioStats] = useState<PortfolioStats>({
-    totalAllocated: 0,
-    currentValue: 0,
-    percentageChange: 0
-  });
 
   const { data: transactions, isLoading, error } = useQuery({
     queryKey: ["crypto-ledger"],
@@ -62,45 +40,11 @@ const CryptoTransactions = () => {
     },
   });
 
-  useEffect(() => {
-    const calculatePortfolioStats = async () => {
-      if (!transactions) return;
-
-      // Calculate total allocated USD
-      const totalAllocated = transactions.reduce((sum, tx) => sum + (tx["Sum (in USD)"] || 0), 0);
-
-      // Calculate current value based on real-time prices
-      let currentValue = 0;
-      for (const tx of transactions) {
-        const coinId = tx["Coin Name"].toLowerCase().replace(/\s+/g, '-');
-        const asset = await fetchIndividualAsset(coinId);
-        if (asset) {
-          const currentPrice = parseFloat(asset.priceUsd);
-          const tokenAmount = tx["Sum (in token)"] || 0;
-          currentValue += currentPrice * tokenAmount;
-        }
-      }
-
-      // Calculate percentage change
-      const percentageChange = ((currentValue - totalAllocated) / totalAllocated) * 100;
-
-      setPortfolioStats({
-        totalAllocated,
-        currentValue,
-        percentageChange
-      });
-    };
-
-    calculatePortfolioStats();
-    // Set up interval for real-time updates
-    const interval = setInterval(calculatePortfolioStats, 60000); // Update every minute
-
-    return () => clearInterval(interval);
-  }, [transactions]);
+  const portfolioStats = usePortfolioStats(transactions);
 
   const handleCoinClick = (coinName: string) => {
-    const coinId = coinName.toLowerCase().replace(/\s+/g, '-');
-    navigate(`/asset/${coinId}`);
+    const coinApiId = getCoinApiId(coinName);
+    navigate(`/asset/${coinApiId}`);
   };
 
   if (error) {
@@ -186,30 +130,27 @@ const CryptoTransactions = () => {
               </TableRow>
             </TableHeader>
             <TableBody className="border-2 border-black">
-              {transactions?.map((tx, index) => {
-                console.log("Rendering transaction:", tx);
-                return (
-                  <TableRow 
-                    key={index} 
-                    className="hover:bg-gray-50 border-b-2 border-black last:border-b-0"
+              {transactions?.map((tx, index) => (
+                <TableRow 
+                  key={index} 
+                  className="hover:bg-gray-50 border-b-2 border-black last:border-b-0"
+                >
+                  <TableCell 
+                    className="border-x-2 border-black font-bold cursor-pointer hover:text-[#FF1F8F] transition-colors"
+                    onClick={() => handleCoinClick(tx["Coin Name"])}
                   >
-                    <TableCell 
-                      className="border-x-2 border-black font-bold cursor-pointer hover:text-[#FF1F8F] transition-colors"
-                      onClick={() => handleCoinClick(tx["Coin Name"])}
-                    >
-                      {tx["Coin Name"]}
-                    </TableCell>
-                    <TableCell className="border-x-2 border-black">{tx["Crypto symbol"]}</TableCell>
-                    <TableCell className="border-x-2 border-black">{tx["Result of acquisition"]}</TableCell>
-                    <TableCell className="border-x-2 border-black">{tx["Sum (in token)"]}</TableCell>
-                    <TableCell className="border-x-2 border-black">${tx["Sum (in USD)"]}</TableCell>
-                    <TableCell className="border-x-2 border-black">{tx["Price of token at the moment"]}</TableCell>
-                    <TableCell className="border-x-2 border-black">{tx["Transaction Date"]}</TableCell>
-                    <TableCell className="border-x-2 border-black">{tx["Transaction platform"]}</TableCell>
-                    <TableCell className="border-x-2 border-black">{tx["Coin status/sector"]}</TableCell>
-                  </TableRow>
-                );
-              })}
+                    {tx["Coin Name"]}
+                  </TableCell>
+                  <TableCell className="border-x-2 border-black">{tx["Crypto symbol"]}</TableCell>
+                  <TableCell className="border-x-2 border-black">{tx["Result of acquisition"]}</TableCell>
+                  <TableCell className="border-x-2 border-black">{tx["Sum (in token)"]}</TableCell>
+                  <TableCell className="border-x-2 border-black">${tx["Sum (in USD)"]}</TableCell>
+                  <TableCell className="border-x-2 border-black">{tx["Price of token at the moment"]}</TableCell>
+                  <TableCell className="border-x-2 border-black">{tx["Transaction Date"]}</TableCell>
+                  <TableCell className="border-x-2 border-black">{tx["Transaction platform"]}</TableCell>
+                  <TableCell className="border-x-2 border-black">{tx["Coin status/sector"]}</TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
         </ScrollArea>
