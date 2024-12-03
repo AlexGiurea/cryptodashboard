@@ -5,6 +5,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { useEffect, useState } from "react";
+import { fetchIndividualAsset } from "@/services/api";
 
 interface Transaction {
   "Coin Name": string;
@@ -18,8 +20,20 @@ interface Transaction {
   "Coin status/sector": string;
 }
 
+interface PortfolioStats {
+  totalAllocated: number;
+  currentValue: number;
+  percentageChange: number;
+}
+
 const CryptoTransactions = () => {
   const navigate = useNavigate();
+  const [portfolioStats, setPortfolioStats] = useState<PortfolioStats>({
+    totalAllocated: 0,
+    currentValue: 0,
+    percentageChange: 0
+  });
+
   const { data: transactions, isLoading, error } = useQuery({
     queryKey: ["crypto-ledger"],
     queryFn: async () => {
@@ -29,7 +43,6 @@ const CryptoTransactions = () => {
         .select("*")
         .order("Transaction Date", { ascending: false });
 
-      // Log the raw response for debugging
       console.log("Supabase response:", { data, error });
 
       if (error) {
@@ -49,8 +62,43 @@ const CryptoTransactions = () => {
     },
   });
 
+  useEffect(() => {
+    const calculatePortfolioStats = async () => {
+      if (!transactions) return;
+
+      // Calculate total allocated USD
+      const totalAllocated = transactions.reduce((sum, tx) => sum + (tx["Sum (in USD)"] || 0), 0);
+
+      // Calculate current value based on real-time prices
+      let currentValue = 0;
+      for (const tx of transactions) {
+        const coinId = tx["Coin Name"].toLowerCase().replace(/\s+/g, '-');
+        const asset = await fetchIndividualAsset(coinId);
+        if (asset) {
+          const currentPrice = parseFloat(asset.priceUsd);
+          const tokenAmount = tx["Sum (in token)"] || 0;
+          currentValue += currentPrice * tokenAmount;
+        }
+      }
+
+      // Calculate percentage change
+      const percentageChange = ((currentValue - totalAllocated) / totalAllocated) * 100;
+
+      setPortfolioStats({
+        totalAllocated,
+        currentValue,
+        percentageChange
+      });
+    };
+
+    calculatePortfolioStats();
+    // Set up interval for real-time updates
+    const interval = setInterval(calculatePortfolioStats, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [transactions]);
+
   const handleCoinClick = (coinName: string) => {
-    // Convert coin name to lowercase and replace spaces with hyphens for URL
     const coinId = coinName.toLowerCase().replace(/\s+/g, '-');
     navigate(`/asset/${coinId}`);
   };
@@ -94,6 +142,33 @@ const CryptoTransactions = () => {
           Back to Top Cryptos
         </Button>
       </div>
+
+      <div className="mb-8 neo-brutalist bg-white border-2 border-black p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">Total Allocated</h3>
+            <p className="text-2xl font-bold">
+              ${portfolioStats.totalAllocated.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </p>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold">Current Portfolio Value</h3>
+            <p className="text-2xl font-bold flex items-center gap-2">
+              ${portfolioStats.currentValue.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+              <span className={`text-sm ${portfolioStats.percentageChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                ({portfolioStats.percentageChange >= 0 ? '+' : ''}{portfolioStats.percentageChange.toFixed(2)}%)
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="neo-brutalist bg-white border-2 border-black">
         <ScrollArea className="h-[800px]">
           <Table>

@@ -84,6 +84,87 @@ export type Database = {
         }
         Relationships: []
       }
+      Huge_Excel_Sheet: {
+        Row: {
+          addr_state: string | null
+          annual_inc: number | null
+          delinq_2yrs: string | null
+          dti: number | null
+          earliest_cr_line: string | null
+          emp_length: string | null
+          funded_amnt: number | null
+          funded_amnt_inv: number | null
+          grade: string | null
+          home_ownership: string | null
+          inq_last_6mths: string | null
+          installment: number | null
+          int_rate: string | null
+          issue_d: string | null
+          loan_amnt: number | null
+          open_acc: number | null
+          pub_rec: string | null
+          purpose: string | null
+          revol_bal: number | null
+          revol_util: string | null
+          sub_grade: string | null
+          term: string | null
+          total_acc: number | null
+          verification_status: string | null
+        }
+        Insert: {
+          addr_state?: string | null
+          annual_inc?: number | null
+          delinq_2yrs?: string | null
+          dti?: number | null
+          earliest_cr_line?: string | null
+          emp_length?: string | null
+          funded_amnt?: number | null
+          funded_amnt_inv?: number | null
+          grade?: string | null
+          home_ownership?: string | null
+          inq_last_6mths?: string | null
+          installment?: number | null
+          int_rate?: string | null
+          issue_d?: string | null
+          loan_amnt?: number | null
+          open_acc?: number | null
+          pub_rec?: string | null
+          purpose?: string | null
+          revol_bal?: number | null
+          revol_util?: string | null
+          sub_grade?: string | null
+          term?: string | null
+          total_acc?: number | null
+          verification_status?: string | null
+        }
+        Update: {
+          addr_state?: string | null
+          annual_inc?: number | null
+          delinq_2yrs?: string | null
+          dti?: number | null
+          earliest_cr_line?: string | null
+          emp_length?: string | null
+          funded_amnt?: number | null
+          funded_amnt_inv?: number | null
+          grade?: string | null
+          home_ownership?: string | null
+          inq_last_6mths?: string | null
+          installment?: number | null
+          int_rate?: string | null
+          issue_d?: string | null
+          loan_amnt?: number | null
+          open_acc?: number | null
+          pub_rec?: string | null
+          purpose?: string | null
+          revol_bal?: number | null
+          revol_util?: string | null
+          sub_grade?: string | null
+          term?: string | null
+          total_acc?: number | null
+          verification_status?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
