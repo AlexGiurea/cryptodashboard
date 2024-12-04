@@ -8,9 +8,12 @@ import { ArrowLeft } from "lucide-react";
 import { Transaction } from "@/types/crypto";
 import { usePortfolioStats } from "@/hooks/usePortfolioStats";
 import { getCoinApiId } from "@/utils/coinIdMappings";
+import { useEffect, useState } from "react";
+import { fetchIndividualAsset } from "@/services/api";
 
 const CryptoTransactions = () => {
   const navigate = useNavigate();
+  const [currentPrices, setCurrentPrices] = useState<Record<string, string>>({});
 
   const { data: transactions, isLoading, error } = useQuery({
     queryKey: ["crypto-ledger"],
@@ -41,6 +44,62 @@ const CryptoTransactions = () => {
   });
 
   const portfolioStats = usePortfolioStats(transactions);
+
+  // Fetch current prices for all unique coins
+  useEffect(() => {
+    const fetchPrices = async () => {
+      if (!transactions) return;
+
+      const uniqueCoins = new Set(transactions.map(tx => tx["Coin Name"]));
+      const newPrices: Record<string, string> = {};
+
+      for (const coinName of uniqueCoins) {
+        try {
+          const coinApiId = getCoinApiId(coinName);
+          const asset = await fetchIndividualAsset(coinApiId);
+
+          if (asset) {
+            // If coin is available in API, use current price
+            newPrices[coinName] = `$${parseFloat(asset.priceUsd).toFixed(2)}`;
+          } else {
+            // For coins not in API (like TAI), use the most recent transaction price
+            const recentTx = transactions
+              .filter(tx => tx["Coin Name"] === coinName)
+              .sort((a, b) => {
+                const dateA = new Date(a["Transaction Date"] || 0);
+                const dateB = new Date(b["Transaction Date"] || 0);
+                return dateB.getTime() - dateA.getTime();
+              })[0];
+
+            if (recentTx) {
+              newPrices[coinName] = recentTx["Price of token at the moment"] || "N/A";
+            }
+          }
+        } catch (error) {
+          console.error(`Error fetching price for ${coinName}:`, error);
+          // Use the most recent transaction price as fallback
+          const recentTx = transactions
+            .filter(tx => tx["Coin Name"] === coinName)
+            .sort((a, b) => {
+              const dateA = new Date(a["Transaction Date"] || 0);
+              const dateB = new Date(b["Transaction Date"] || 0);
+              return dateB.getTime() - dateA.getTime();
+            })[0];
+
+          if (recentTx) {
+            newPrices[coinName] = recentTx["Price of token at the moment"] || "N/A";
+          }
+        }
+      }
+
+      setCurrentPrices(newPrices);
+    };
+
+    fetchPrices();
+    // Update prices every minute
+    const interval = setInterval(fetchPrices, 60000);
+    return () => clearInterval(interval);
+  }, [transactions]);
 
   const handleCoinClick = (coinName: string) => {
     const coinApiId = getCoinApiId(coinName);
@@ -124,6 +183,7 @@ const CryptoTransactions = () => {
                 <TableHead className="border-2 border-black font-bold">Token Amount</TableHead>
                 <TableHead className="border-2 border-black font-bold">USD Amount</TableHead>
                 <TableHead className="border-2 border-black font-bold">Token Price</TableHead>
+                <TableHead className="border-2 border-black font-bold">Current Price</TableHead>
                 <TableHead className="border-2 border-black font-bold">Date</TableHead>
                 <TableHead className="border-2 border-black font-bold">Platform</TableHead>
                 <TableHead className="border-2 border-black font-bold">Sector</TableHead>
@@ -146,6 +206,7 @@ const CryptoTransactions = () => {
                   <TableCell className="border-x-2 border-black">{tx["Sum (in token)"]}</TableCell>
                   <TableCell className="border-x-2 border-black">${tx["Sum (in USD)"]}</TableCell>
                   <TableCell className="border-x-2 border-black">{tx["Price of token at the moment"]}</TableCell>
+                  <TableCell className="border-x-2 border-black">{currentPrices[tx["Coin Name"]] || "Loading..."}</TableCell>
                   <TableCell className="border-x-2 border-black">{tx["Transaction Date"]}</TableCell>
                   <TableCell className="border-x-2 border-black">{tx["Transaction platform"]}</TableCell>
                   <TableCell className="border-x-2 border-black">{tx["Coin status/sector"]}</TableCell>
