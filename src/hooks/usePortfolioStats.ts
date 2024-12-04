@@ -26,32 +26,18 @@ export const usePortfolioStats = (transactions: Transaction[] | undefined) => {
         .reduce((sum, tx) => sum + (tx["Sum (in USD)"] || 0), 0);
 
       // Calculate current value based on net token amounts and real-time prices
-      let tokenBalances: Record<string, number> = {};
+      let currentValue = 0;
+      const processedCoins = new Set<string>();
 
-      // Calculate net token balances
-      transactions.forEach(tx => {
-        const tokenAmount = tx["Sum (in token)"] || 0;
+      // Process each transaction
+      for (const tx of transactions) {
         const coinName = tx["Coin Name"];
         const txType = tx["Result of acquisition"]?.toLowerCase();
+        const tokenAmount = tx["Sum (in token)"] || 0;
 
-        if (!tokenBalances[coinName]) {
-          tokenBalances[coinName] = 0;
-        }
-
-        // Add amounts for buy and swap-buy transactions
-        if (txType === "buy" || txType === "swap buy") {
-          tokenBalances[coinName] += tokenAmount;
-        }
-        // Subtract amounts for sell and swap-sell transactions
-        else if (txType === "sell" || txType === "swap sell") {
-          tokenBalances[coinName] -= tokenAmount;
-        }
-      });
-
-      // Calculate current value using real-time prices
-      let currentValue = 0;
-      for (const [coinName, balance] of Object.entries(tokenBalances)) {
-        if (balance === 0) continue; // Skip if no net holdings
+        // Skip if we've already processed this coin
+        if (processedCoins.has(coinName)) continue;
+        processedCoins.add(coinName);
 
         try {
           const coinApiId = getCoinApiId(coinName);
@@ -59,39 +45,65 @@ export const usePortfolioStats = (transactions: Transaction[] | undefined) => {
           
           const asset = await fetchIndividualAsset(coinApiId);
           if (asset) {
+            // If coin is available in API, calculate using current price and net balance
             const currentPrice = parseFloat(asset.priceUsd);
-            currentValue += currentPrice * balance;
-          } else {
-            // If the asset is not found in CoinCap API, use the latest transaction price
-            console.log(`Asset ${coinName} not found in CoinCap API, using latest transaction price`);
-            const latestTx = [...transactions]
-              .filter(tx => tx["Coin Name"] === coinName)
-              .sort((a, b) => {
-                const dateA = new Date(a["Transaction Date"] || 0);
-                const dateB = new Date(b["Transaction Date"] || 0);
-                return dateB.getTime() - dateA.getTime();
-              })[0];
             
-            if (latestTx) {
-              const originalPrice = parseFloat(latestTx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
-              currentValue += originalPrice * balance;
-            }
+            // Calculate net balance for this coin
+            const netBalance = transactions
+              .filter(t => t["Coin Name"] === coinName)
+              .reduce((balance, t) => {
+                const amount = t["Sum (in token)"] || 0;
+                const type = t["Result of acquisition"]?.toLowerCase();
+                if (type === "buy" || type === "swap buy") {
+                  return balance + amount;
+                } else if (type === "sell" || type === "swap sell") {
+                  return balance - amount;
+                }
+                return balance;
+              }, 0);
+
+            currentValue += currentPrice * netBalance;
+          } else {
+            // For coins not in API (like TAI), use original transaction prices
+            console.log(`Asset ${coinName} not found in CoinCap API, using original transaction prices`);
+            
+            // Sum up the value using original transaction prices
+            const coinValue = transactions
+              .filter(t => t["Coin Name"] === coinName)
+              .reduce((sum, t) => {
+                const type = t["Result of acquisition"]?.toLowerCase();
+                const amount = t["Sum (in token)"] || 0;
+                const price = parseFloat(t["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
+                
+                if (type === "buy" || type === "swap buy") {
+                  return sum + (amount * price);
+                } else if (type === "sell" || type === "swap sell") {
+                  return sum - (amount * price);
+                }
+                return sum;
+              }, 0);
+
+            currentValue += coinValue;
           }
         } catch (error) {
           console.error(`Error fetching price for ${coinName}:`, error);
-          // Use latest transaction price as fallback
-          const latestTx = [...transactions]
-            .filter(tx => tx["Coin Name"] === coinName)
-            .sort((a, b) => {
-              const dateA = new Date(a["Transaction Date"] || 0);
-              const dateB = new Date(b["Transaction Date"] || 0);
-              return dateB.getTime() - dateA.getTime();
-            })[0];
-          
-          if (latestTx) {
-            const originalPrice = parseFloat(latestTx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
-            currentValue += originalPrice * balance;
-          }
+          // Use original transaction prices as fallback
+          const coinValue = transactions
+            .filter(t => t["Coin Name"] === coinName)
+            .reduce((sum, t) => {
+              const type = t["Result of acquisition"]?.toLowerCase();
+              const amount = t["Sum (in token)"] || 0;
+              const price = parseFloat(t["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
+              
+              if (type === "buy" || type === "swap buy") {
+                return sum + (amount * price);
+              } else if (type === "sell" || type === "swap sell") {
+                return sum - (amount * price);
+              }
+              return sum;
+            }, 0);
+
+          currentValue += coinValue;
         }
       }
 
