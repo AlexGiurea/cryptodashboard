@@ -22,7 +22,7 @@ const CryptoTransactions = () => {
       const { data, error } = await supabase
         .from("Crypto_Ledger")
         .select("*")
-        .order("Transaction Date", { ascending: false });
+        .order("Transaction Date", { ascending: true });
 
       if (error) {
         console.error("Error fetching from Crypto_Ledger:", error);
