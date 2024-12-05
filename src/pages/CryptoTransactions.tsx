@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { Transaction } from "@/types/crypto";
 import { usePortfolioStats } from "@/hooks/usePortfolioStats";
-import { getCoinApiId } from "@/utils/coinIdMappings";
+import { getCoinApiId, isSpecialToken, getSpecialTokenPrice } from "@/utils/coinIdMappings";
 import { useEffect, useState } from "react";
 import { fetchIndividualAsset } from "@/services/api";
 import { PortfolioStats } from "@/components/crypto/PortfolioStats";
@@ -44,19 +44,21 @@ const CryptoTransactions = () => {
       const newPrices: Record<string, string> = {};
 
       for (const coinName of uniqueCoins) {
-        // Skip TAI as it's not in the API
-        if (coinName.toLowerCase() === "tai") {
-          newPrices[coinName] = "$0.38";
+        // Handle special tokens with fixed prices
+        if (isSpecialToken(coinName)) {
+          newPrices[coinName] = getSpecialTokenPrice(coinName);
           continue;
         }
 
         try {
           const coinApiId = getCoinApiId(coinName);
+          console.log(`Fetching price for ${coinName} using API ID: ${coinApiId}`);
           const asset = await fetchIndividualAsset(coinApiId);
 
           if (asset) {
             newPrices[coinName] = `$${parseFloat(asset.priceUsd).toFixed(2)}`;
           } else {
+            console.log(`Asset ${coinName} not found in CoinCap API, using original transaction prices`);
             const recentTx = transactions
               .filter(tx => tx["Coin Name"] === coinName)
               .sort((a, b) => {
