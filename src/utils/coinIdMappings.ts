@@ -2,6 +2,7 @@
 export const coinIdMappings: Record<string, string> = {
   "near": "near-protocol",
   "tai": "tether", // Map TAI to a stablecoin since it's not available in CoinCap
+  "sol": "solana", // Add mapping for Solana
   // Add more mappings here as needed
 };
 
