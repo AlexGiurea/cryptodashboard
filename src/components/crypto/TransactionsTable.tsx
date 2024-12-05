@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Transaction } from "@/types/crypto";
@@ -14,6 +14,32 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
   currentPrices,
   onCoinClick
 }) => {
+  // Keep track of previous prices for comparison
+  const previousPrices = useRef<Record<string, string>>(currentPrices);
+
+  useEffect(() => {
+    // Update previous prices after a delay to allow for animation
+    const timer = setTimeout(() => {
+      previousPrices.current = currentPrices;
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [currentPrices]);
+
+  const getPriceChangeClass = (coinName: string): string => {
+    if (coinName.toLowerCase() === "tai") return "";
+    
+    const current = parseFloat(currentPrices[coinName]?.replace(/[^0-9.-]/g, '') || '0');
+    const previous = parseFloat(previousPrices.current[coinName]?.replace(/[^0-9.-]/g, '') || '0');
+    
+    if (current > previous) {
+      return "text-green-600 bg-green-100";
+    } else if (current < previous) {
+      return "text-red-600 bg-red-100";
+    }
+    return "";
+  };
+
   return (
     <div className="neo-brutalist bg-white border-2 border-black">
       <ScrollArea className="h-[800px]">
@@ -49,7 +75,9 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
                 <TableCell className="border-x-2 border-black">{tx["Sum (in token)"]}</TableCell>
                 <TableCell className="border-x-2 border-black">${tx["Sum (in USD)"]}</TableCell>
                 <TableCell className="border-x-2 border-black">{tx["Price of token at the moment"]}</TableCell>
-                <TableCell className="border-x-2 border-black">
+                <TableCell 
+                  className={`border-x-2 border-black transition-all duration-300 px-4 py-2 rounded ${getPriceChangeClass(tx["Coin Name"])}`}
+                >
                   {tx["Coin Name"].toLowerCase() === "tai" 
                     ? "$0.38"
                     : currentPrices[tx["Coin Name"]] || "Loading..."}

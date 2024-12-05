@@ -25,12 +25,20 @@ export const PortfolioStats: React.FC<PortfolioStatsProps> = ({
         </div>
         <div className="space-y-2">
           <h3 className="text-lg font-semibold">Current Portfolio Value</h3>
-          <p className="text-2xl font-bold flex items-center gap-2">
-            ${currentValue.toLocaleString(undefined, {
-              minimumFractionDigits: 2,
-              maximumFractionDigits: 2
-            })}
-            <span className={`text-sm ${percentageChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <p className="text-2xl font-bold flex items-center gap-2 transition-colors duration-300">
+            <span className="transition-all duration-300">
+              ${currentValue.toLocaleString(undefined, {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </span>
+            <span 
+              className={`text-sm transition-all duration-300 ${
+                percentageChange >= 0 
+                  ? 'text-green-600 bg-green-100' 
+                  : 'text-red-600 bg-red-100'
+              } px-2 py-1 rounded-full`}
+            >
               ({percentageChange >= 0 ? '+' : ''}{percentageChange.toFixed(2)}%)
             </span>
           </p>
