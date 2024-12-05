@@ -89,7 +89,8 @@ const CryptoTransactions = () => {
     };
 
     fetchPrices();
-    const interval = setInterval(fetchPrices, 60000);
+    // Update prices every 10 seconds
+    const interval = setInterval(fetchPrices, 10000);
     return () => clearInterval(interval);
   }, [transactions]);
 
