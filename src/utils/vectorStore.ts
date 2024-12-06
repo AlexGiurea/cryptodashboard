@@ -1,4 +1,4 @@
-import chromadb from 'chromadb';
+import { ChromaClient } from 'chromadb';
 import { Asset } from '@/services/api';
 
 let collection: any = null;
@@ -8,7 +8,7 @@ export const initializeVectorStore = async (cryptoData: Asset[]) => {
     console.log("Initializing ChromaDB with crypto data...");
     
     // Initialize ChromaDB client in memory mode
-    const client = new chromadb.Client();
+    const client = new ChromaClient();
     
     // Create or get collection
     try {
