@@ -7,15 +7,22 @@ export const initializeVectorStore = async (cryptoData: Asset[]) => {
   try {
     console.log("Initializing ChromaDB with crypto data...");
     
-    // Initialize ChromaDB client in memory mode
-    const client = new ChromaClient();
+    // Initialize ChromaDB client with HTTP
+    const client = new ChromaClient({
+      path: "http://localhost:8000" // Make sure ChromaDB server is running
+    });
     
-    // Create or get collection
+    // Create or get collection with proper params
     try {
-      collection = await client.getCollection("crypto-data");
+      collection = await client.getCollection({
+        name: "crypto-data"
+      });
       console.log("Retrieved existing collection");
     } catch {
-      collection = await client.createCollection("crypto-data");
+      collection = await client.createCollection({
+        name: "crypto-data",
+        metadata: { "description": "Cryptocurrency market data" }
+      });
       console.log("Created new collection");
     }
 
