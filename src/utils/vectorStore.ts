@@ -1,26 +1,32 @@
-import { ChromaClient } from 'chromadb';
-import { Asset } from '@/services/api';
+import { ChromaClient, OpenAIEmbeddingFunction } from 'chromadb';
 
 let collection: any = null;
 
-export const initializeVectorStore = async (cryptoData: Asset[]) => {
+// Initialize embedding function using OpenAI
+const embeddingFunction = new OpenAIEmbeddingFunction({
+  openai_api_key: import.meta.env.VITE_OPENAI_API_KEY
+});
+
+export const initializeVectorStore = async (cryptoData: any[]) => {
   try {
     console.log("Initializing ChromaDB with crypto data...");
     
     // Initialize ChromaDB client with HTTP
     const client = new ChromaClient({
-      path: "http://localhost:8000" // Make sure ChromaDB server is running
+      path: "http://localhost:8000"
     });
     
     // Create or get collection with proper params
     try {
       collection = await client.getCollection({
-        name: "crypto-data"
+        name: "crypto-data",
+        embeddingFunction
       });
       console.log("Retrieved existing collection");
     } catch {
       collection = await client.createCollection({
         name: "crypto-data",
+        embeddingFunction,
         metadata: { "description": "Cryptocurrency market data" }
       });
       console.log("Created new collection");
