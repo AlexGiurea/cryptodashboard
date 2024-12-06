@@ -6,7 +6,7 @@ import { MessageCircle, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { sendChatMessage } from "@/services/api";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { initializeChromaDB } from "@/utils/vectorStore";
+import { initializeVectorStore } from "@/utils/vectorStore";
 import { useQuery } from "@tanstack/react-query";
 import { fetchTopAssets } from "@/services/api";
 
@@ -26,7 +26,7 @@ export const ChatBot = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Fetch crypto data and initialize ChromaDB
+  // Fetch crypto data and initialize vector store
   const { data: cryptoData } = useQuery({
     queryKey: ["assets"],
     queryFn: fetchTopAssets,
@@ -36,11 +36,11 @@ export const ChatBot = () => {
   useEffect(() => {
     const initialize = async () => {
       if (cryptoData && !isInitialized) {
-        console.log("Initializing ChromaDB with fetched crypto data...");
-        const success = await initializeChromaDB(cryptoData);
+        console.log("Initializing vector store with fetched crypto data...");
+        const success = await initializeVectorStore(cryptoData);
         if (success) {
           setIsInitialized(true);
-          console.log("ChromaDB initialized successfully");
+          console.log("Vector store initialized successfully");
         } else {
           toast.error("Failed to initialize crypto data");
         }

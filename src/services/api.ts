@@ -1,5 +1,5 @@
 import { toast } from "sonner";
-import { queryChromaDB } from "@/utils/vectorStore";
+import { queryVectorStore } from "@/utils/vectorStore";
 
 const BASE_URL = "https://api.coincap.io/v2";
 
@@ -79,13 +79,13 @@ export const fetchIndividualAsset = async (id: string): Promise<Asset | null> =>
 
 export const sendChatMessage = async (message: string, conversationHistory: { role: string; content: string }[] = []) => {
   try {
-    // Query ChromaDB for relevant context
-    const chromaResults = await queryChromaDB(message);
+    // Query vector store for relevant context
+    const vectorResults = await queryVectorStore(message);
     let contextualInfo = "";
     
-    if (chromaResults && chromaResults.documents[0]) {
+    if (vectorResults && vectorResults.length > 0) {
       contextualInfo = "Here is some relevant information from our crypto database:\n" +
-        chromaResults.documents[0].join("\n");
+        vectorResults.map(doc => doc.pageContent).join("\n");
     }
 
     const cryptoData = await fetchTopAssets();
@@ -123,7 +123,7 @@ export const sendChatMessage = async (message: string, conversationHistory: { ro
       })
     }));
 
-    console.log("Sending request to OpenAI with market data context and ChromaDB results");
+    console.log("Sending request to OpenAI with market data context and vector store results");
     
     const messages = [
       {
