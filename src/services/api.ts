@@ -23,6 +23,104 @@ export interface AssetHistory {
   date: string;
 }
 
+export const sendChatMessage = async (message: string, conversationHistory: { role: string; content: string }[] = []) => {
+  try {
+    // Query ChromaDB for relevant context
+    const vectorResults = await queryVectorStore(message);
+    let contextualInfo = "";
+    
+    if (vectorResults && vectorResults.length > 0) {
+      contextualInfo = "Here is some relevant information from our crypto database:\n" +
+        vectorResults.map(doc => doc.pageContent).join("\n");
+    }
+
+    const cryptoData = await fetchTopAssets();
+    
+    const chartMatch = message.toLowerCase().match(/show (?:me )?(?:the )?(?:chart|graph|price) (?:for |of )?(\w+)/);
+    let chartData = null;
+    
+    if (chartMatch) {
+      const symbol = chartMatch[1].toUpperCase();
+      const asset = cryptoData.find(a => a.symbol.toLowerCase() === symbol.toLowerCase());
+      
+      if (asset) {
+        console.log(`Fetching chart data for ${asset.name} (${asset.symbol})`);
+        const history = await fetchAssetHistory(asset.id);
+        chartData = {
+          data: history,
+          type: "line" as const,
+          title: `${asset.name} (${asset.symbol}) Price Chart`
+        };
+      }
+    }
+
+    // Create a simplified context with current market data
+    const cryptoContext = cryptoData.map(asset => ({
+      rank: Number(asset.rank),
+      name: asset.name,
+      symbol: asset.symbol,
+      price: Number(asset.priceUsd).toFixed(2),
+      change24h: Number(asset.changePercent24Hr).toFixed(2),
+      marketCap: Number(asset.marketCapUsd).toLocaleString(undefined, {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      })
+    }));
+
+    console.log("Sending request to OpenAI with market data context and ChromaDB results");
+    
+    const messages = [
+      {
+        role: "system",
+        content: `You are a helpful cryptocurrency assistant. Here is the current market data for the top cryptocurrencies:
+        ${JSON.stringify(cryptoContext.slice(0, 20), null, 2)}
+        
+        ${contextualInfo}
+        
+        When asked about specific cryptocurrencies, provide information from this data.
+        Format numbers clearly and include rank, price, 24h change, and market cap when available.
+        If asked to show a chart, one will be displayed automatically - acknowledge this in your response.`
+      },
+      ...conversationHistory.slice(-5),
+      {
+        role: "user",
+        content: message
+      }
+    ];
+
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4",
+        messages,
+        temperature: 0.7,
+        max_tokens: 500
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    console.log("Received response from OpenAI:", data.choices[0].message.content);
+    
+    return { 
+      message: data.choices[0].message.content,
+      chart: chartData
+    };
+  } catch (error) {
+    console.error("Chat error:", error);
+    throw error;
+  }
+};
+
 export const fetchTopAssets = async (): Promise<Asset[]> => {
   try {
     console.log("Fetching top assets...");
@@ -74,103 +172,5 @@ export const fetchIndividualAsset = async (id: string): Promise<Asset | null> =>
   } catch (error) {
     console.error(`Error fetching asset ${id}:`, error);
     return null;
-  }
-};
-
-export const sendChatMessage = async (message: string, conversationHistory: { role: string; content: string }[] = []) => {
-  try {
-    // Query vector store for relevant context
-    const vectorResults = await queryVectorStore(message);
-    let contextualInfo = "";
-    
-    if (vectorResults && vectorResults.length > 0) {
-      contextualInfo = "Here is some relevant information from our crypto database:\n" +
-        vectorResults.map(doc => doc.pageContent).join("\n");
-    }
-
-    const cryptoData = await fetchTopAssets();
-    
-    const chartMatch = message.toLowerCase().match(/show (?:me )?(?:the )?(?:chart|graph|price) (?:for |of )?(\w+)/);
-    let chartData = null;
-    
-    if (chartMatch) {
-      const symbol = chartMatch[1].toUpperCase();
-      const asset = cryptoData.find(a => a.symbol.toLowerCase() === symbol.toLowerCase());
-      
-      if (asset) {
-        console.log(`Fetching chart data for ${asset.name} (${asset.symbol})`);
-        const history = await fetchAssetHistory(asset.id);
-        chartData = {
-          data: history,
-          type: "line" as const,
-          title: `${asset.name} (${asset.symbol}) Price Chart`
-        };
-      }
-    }
-
-    // Create a simplified context with current market data
-    const cryptoContext = cryptoData.map(asset => ({
-      rank: Number(asset.rank),
-      name: asset.name,
-      symbol: asset.symbol,
-      price: Number(asset.priceUsd).toFixed(2),
-      change24h: Number(asset.changePercent24Hr).toFixed(2),
-      marketCap: Number(asset.marketCapUsd).toLocaleString(undefined, {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-      })
-    }));
-
-    console.log("Sending request to OpenAI with market data context and vector store results");
-    
-    const messages = [
-      {
-        role: "system",
-        content: `You are a helpful cryptocurrency assistant. Here is the current market data for the top cryptocurrencies:
-        ${JSON.stringify(cryptoContext.slice(0, 20), null, 2)}
-        
-        ${contextualInfo}
-        
-        When asked about specific cryptocurrencies, provide information from this data.
-        Format numbers clearly and include rank, price, 24h change, and market cap when available.
-        If asked to show a chart, one will be displayed automatically - acknowledge this in your response.`
-      },
-      ...conversationHistory.slice(-5),
-      {
-        role: "user",
-        content: message
-      }
-    ];
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages,
-        temperature: 0.7,
-        max_tokens: 500
-      }),
-    });
-    
-    if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
-    }
-    
-    const data = await response.json();
-    console.log("Received response from OpenAI:", data.choices[0].message.content);
-    
-    return { 
-      message: data.choices[0].message.content,
-      chart: chartData
-    };
-  } catch (error) {
-    console.error("Chat error:", error);
-    throw error;
   }
 };

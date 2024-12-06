@@ -1,57 +1,74 @@
-import { MemoryVectorStore } from "@langchain/community/vectorstores/memory";
-import { Document } from "@langchain/core/documents";
-import { TensorFlowEmbeddings } from "@langchain/community/embeddings/tensorflow";
+import chromadb from 'chromadb';
+import { Asset } from '@/services/api';
 
-let vectorStore: MemoryVectorStore | null = null;
+let collection: any = null;
 
-export const initializeVectorStore = async (cryptoData: any[]) => {
-  console.log("Initializing vector store with crypto data...");
-  
+export const initializeVectorStore = async (cryptoData: Asset[]) => {
   try {
-    // Create documents from crypto data
+    console.log("Initializing ChromaDB with crypto data...");
+    
+    // Initialize ChromaDB client in memory mode
+    const client = new chromadb.Client();
+    
+    // Create or get collection
+    try {
+      collection = await client.getCollection("crypto-data");
+      console.log("Retrieved existing collection");
+    } catch {
+      collection = await client.createCollection("crypto-data");
+      console.log("Created new collection");
+    }
+
+    // Prepare documents, metadatas and ids
     const documents = cryptoData.map(crypto => {
-      const content = `${crypto.name} (${crypto.symbol}) is ranked #${crypto.rank} with a price of $${Number(crypto.priceUsd).toFixed(2)} ` +
+      return `${crypto.name} (${crypto.symbol}) is ranked #${crypto.rank} with a price of $${Number(crypto.priceUsd).toFixed(2)} ` +
         `and a market cap of $${Number(crypto.marketCapUsd).toLocaleString()}. ` +
         `24h change: ${Number(crypto.changePercent24Hr).toFixed(2)}%`;
-      
-      return new Document({
-        pageContent: content,
-        metadata: {
-          symbol: crypto.symbol,
-          name: crypto.name,
-          rank: crypto.rank
-        }
-      });
     });
 
-    // Initialize embeddings
-    const embeddings = new TensorFlowEmbeddings();
-    
-    // Create vector store
-    vectorStore = await MemoryVectorStore.fromDocuments(documents, embeddings);
-    
-    console.log("Successfully initialized vector store with crypto data");
+    const metadatas = cryptoData.map(crypto => ({
+      symbol: crypto.symbol,
+      name: crypto.name,
+      rank: crypto.rank
+    }));
+
+    const ids = cryptoData.map((_, index) => `crypto-${index}`);
+
+    // Add documents to collection
+    await collection.add({
+      documents,
+      metadatas,
+      ids
+    });
+
+    console.log("Successfully added documents to ChromaDB");
     return true;
   } catch (error) {
-    console.error("Error initializing vector store:", error);
+    console.error("Error initializing ChromaDB:", error);
     return false;
   }
 };
 
 export const queryVectorStore = async (query: string, limit: number = 3) => {
-  if (!vectorStore) {
-    console.error("Vector store not initialized");
+  if (!collection) {
+    console.error("ChromaDB collection not initialized");
     return null;
   }
 
   try {
-    console.log("Querying vector store with:", query);
-    const results = await vectorStore.similaritySearch(query, limit);
+    console.log("Querying ChromaDB with:", query);
+    const results = await collection.query({
+      queryTexts: [query],
+      nResults: limit
+    });
     
-    console.log("Vector store query results:", results);
-    return results;
+    console.log("ChromaDB query results:", results);
+    return results.documents[0].map((doc: string, index: number) => ({
+      pageContent: doc,
+      metadata: results.metadatas[0][index]
+    }));
   } catch (error) {
-    console.error("Error querying vector store:", error);
+    console.error("Error querying ChromaDB:", error);
     return null;
   }
 };
