@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { Input } from "./ui/input";
@@ -6,6 +6,9 @@ import { MessageCircle, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { sendChatMessage } from "@/services/api";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { initializeChromaDB } from "@/utils/vectorStore";
+import { useQuery } from "@tanstack/react-query";
+import { fetchTopAssets } from "@/services/api";
 
 interface Message {
   role: "user" | "assistant";
@@ -21,6 +24,31 @@ export const ChatBot = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Fetch crypto data and initialize ChromaDB
+  const { data: cryptoData } = useQuery({
+    queryKey: ["assets"],
+    queryFn: fetchTopAssets,
+    refetchInterval: 30000,
+  });
+
+  useEffect(() => {
+    const initialize = async () => {
+      if (cryptoData && !isInitialized) {
+        console.log("Initializing ChromaDB with fetched crypto data...");
+        const success = await initializeChromaDB(cryptoData);
+        if (success) {
+          setIsInitialized(true);
+          console.log("ChromaDB initialized successfully");
+        } else {
+          toast.error("Failed to initialize crypto data");
+        }
+      }
+    };
+
+    initialize();
+  }, [cryptoData, isInitialized]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

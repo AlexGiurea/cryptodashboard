@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { queryChromaDB } from "@/utils/vectorStore";
 
 const BASE_URL = "https://api.coincap.io/v2";
 
@@ -78,6 +79,15 @@ export const fetchIndividualAsset = async (id: string): Promise<Asset | null> =>
 
 export const sendChatMessage = async (message: string, conversationHistory: { role: string; content: string }[] = []) => {
   try {
+    // Query ChromaDB for relevant context
+    const chromaResults = await queryChromaDB(message);
+    let contextualInfo = "";
+    
+    if (chromaResults && chromaResults.documents[0]) {
+      contextualInfo = "Here is some relevant information from our crypto database:\n" +
+        chromaResults.documents[0].join("\n");
+    }
+
     const cryptoData = await fetchTopAssets();
     
     const chartMatch = message.toLowerCase().match(/show (?:me )?(?:the )?(?:chart|graph|price) (?:for |of )?(\w+)/);
@@ -113,7 +123,7 @@ export const sendChatMessage = async (message: string, conversationHistory: { ro
       })
     }));
 
-    console.log("Sending request to OpenAI with market data context");
+    console.log("Sending request to OpenAI with market data context and ChromaDB results");
     
     const messages = [
       {
@@ -121,11 +131,13 @@ export const sendChatMessage = async (message: string, conversationHistory: { ro
         content: `You are a helpful cryptocurrency assistant. Here is the current market data for the top cryptocurrencies:
         ${JSON.stringify(cryptoContext.slice(0, 20), null, 2)}
         
+        ${contextualInfo}
+        
         When asked about specific cryptocurrencies, provide information from this data.
         Format numbers clearly and include rank, price, 24h change, and market cap when available.
         If asked to show a chart, one will be displayed automatically - acknowledge this in your response.`
       },
-      ...conversationHistory.slice(-5), // Only keep last 5 messages to prevent token limit
+      ...conversationHistory.slice(-5),
       {
         role: "user",
         content: message
@@ -139,7 +151,7 @@ export const sendChatMessage = async (message: string, conversationHistory: { ro
         "Authorization": `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
-        model: "gpt-4",
+        model: "gpt-4o-mini",
         messages,
         temperature: 0.7,
         max_tokens: 500
