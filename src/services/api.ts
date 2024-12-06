@@ -1,5 +1,4 @@
 import { toast } from "sonner";
-import { queryVectorStore } from "@/utils/vectorStore";
 
 const BASE_URL = "https://api.coincap.io/v2";
 
@@ -25,15 +24,6 @@ export interface AssetHistory {
 
 export const sendChatMessage = async (message: string, conversationHistory: { role: string; content: string }[] = []) => {
   try {
-    // Query ChromaDB for relevant context
-    const vectorResults = await queryVectorStore(message);
-    let contextualInfo = "";
-    
-    if (vectorResults && vectorResults.length > 0) {
-      contextualInfo = "Here is some relevant information from our crypto database:\n" +
-        vectorResults.map(doc => doc.pageContent).join("\n");
-    }
-
     const cryptoData = await fetchTopAssets();
     
     const chartMatch = message.toLowerCase().match(/show (?:me )?(?:the )?(?:chart|graph|price) (?:for |of )?(\w+)/);
@@ -69,15 +59,13 @@ export const sendChatMessage = async (message: string, conversationHistory: { ro
       })
     }));
 
-    console.log("Sending request to OpenAI with market data context and ChromaDB results");
+    console.log("Sending request to OpenAI with market data context");
     
     const messages = [
       {
         role: "system",
         content: `You are a helpful cryptocurrency assistant. Here is the current market data for the top cryptocurrencies:
         ${JSON.stringify(cryptoContext.slice(0, 20), null, 2)}
-        
-        ${contextualInfo}
         
         When asked about specific cryptocurrencies, provide information from this data.
         Format numbers clearly and include rank, price, 24h change, and market cap when available.

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { Input } from "./ui/input";
@@ -6,7 +6,6 @@ import { MessageCircle, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import { sendChatMessage } from "@/services/api";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { initializeVectorStore } from "@/utils/vectorStore";
 import { useQuery } from "@tanstack/react-query";
 import { fetchTopAssets } from "@/services/api";
 
@@ -24,31 +23,13 @@ export const ChatBot = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Fetch crypto data and initialize vector store
+  // Fetch crypto data
   const { data: cryptoData } = useQuery({
     queryKey: ["assets"],
     queryFn: fetchTopAssets,
     refetchInterval: 30000,
   });
-
-  useEffect(() => {
-    const initialize = async () => {
-      if (cryptoData && !isInitialized) {
-        console.log("Initializing vector store with fetched crypto data...");
-        const success = await initializeVectorStore(cryptoData);
-        if (success) {
-          setIsInitialized(true);
-          console.log("Vector store initialized successfully");
-        } else {
-          toast.error("Failed to initialize crypto data");
-        }
-      }
-    };
-
-    initialize();
-  }, [cryptoData, isInitialized]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
