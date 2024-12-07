@@ -38,21 +38,89 @@ export const sendChatMessage = async (message: string, conversationHistory: { ro
 
     console.log("Successfully fetched transaction data:", transactionData);
 
-    // Calculate portfolio statistics
-    const portfolioStats = transactionData.reduce((stats: any, tx: any) => {
-      if (tx["Result of acquisition"]?.toLowerCase() === "buy") {
-        stats.totalInvested += tx["Sum (in USD)"] || 0;
-        stats.transactions.buy += 1;
-      } else if (tx["Result of acquisition"]?.toLowerCase() === "sell") {
-        stats.totalSold += tx["Sum (in USD)"] || 0;
-        stats.transactions.sell += 1;
-      }
-      return stats;
-    }, { totalInvested: 0, totalSold: 0, transactions: { buy: 0, sell: 0 } });
-
     // Get current market data
     const cryptoData = await fetchTopAssets();
     
+    // Calculate comprehensive portfolio statistics
+    const portfolioAnalysis = transactionData.reduce((analysis: any, tx: any) => {
+      const coinName = tx["Coin Name"];
+      const type = tx["Result of acquisition"]?.toLowerCase();
+      const tokenAmount = tx["Sum (in token)"] || 0;
+      const usdAmount = tx["Sum (in USD)"] || 0;
+
+      // Initialize coin data if not exists
+      if (!analysis.coins[coinName]) {
+        analysis.coins[coinName] = {
+          totalTokens: 0,
+          totalInvested: 0,
+          averageEntryPrice: 0,
+          transactions: []
+        };
+      }
+
+      // Update coin statistics
+      if (type === "buy" || type === "swap buy") {
+        analysis.coins[coinName].totalTokens += tokenAmount;
+        analysis.coins[coinName].totalInvested += usdAmount;
+        analysis.totalAllocated += usdAmount;
+      } else if (type === "sell" || type === "swap sell") {
+        analysis.coins[coinName].totalTokens -= tokenAmount;
+        analysis.totalSold += usdAmount;
+      }
+
+      // Store transaction
+      analysis.coins[coinName].transactions.push(tx);
+
+      // Calculate average entry price
+      if (analysis.coins[coinName].totalTokens > 0) {
+        analysis.coins[coinName].averageEntryPrice = 
+          analysis.coins[coinName].totalInvested / analysis.coins[coinName].totalTokens;
+      }
+
+      return analysis;
+    }, { 
+      coins: {}, 
+      totalAllocated: 0, 
+      totalSold: 0,
+      currentValue: 0
+    });
+
+    // Calculate current portfolio value using real-time prices
+    for (const [coinName, coinData] of Object.entries(portfolioAnalysis.coins)) {
+      const currentAsset = cryptoData.find(
+        asset => asset.name.toLowerCase() === coinName.toLowerCase() ||
+                asset.symbol.toLowerCase() === coinName.toLowerCase()
+      );
+
+      if (currentAsset) {
+        const currentPrice = parseFloat(currentAsset.priceUsd);
+        const value = currentPrice * (coinData as any).totalTokens;
+        (coinData as any).currentPrice = currentPrice;
+        (coinData as any).currentValue = value;
+        portfolioAnalysis.currentValue += value;
+      } else {
+        console.log(`Price not found for ${coinName}, using last known price`);
+        // Use the last known transaction price for coins not in CoinCap API
+        const lastTx = (coinData as any).transactions.slice(-1)[0];
+        const lastPrice = parseFloat(lastTx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
+        const value = lastPrice * (coinData as any).totalTokens;
+        (coinData as any).currentPrice = lastPrice;
+        (coinData as any).currentValue = value;
+        portfolioAnalysis.currentValue += value;
+      }
+    }
+
+    // Calculate overall portfolio performance
+    const portfolioPerformance = {
+      totalAllocated: portfolioAnalysis.totalAllocated,
+      totalSold: portfolioAnalysis.totalSold,
+      currentValue: portfolioAnalysis.currentValue,
+      percentageChange: ((portfolioAnalysis.currentValue - portfolioAnalysis.totalAllocated) / portfolioAnalysis.totalAllocated) * 100
+    };
+
+    console.log("Portfolio Analysis:", portfolioAnalysis);
+    console.log("Portfolio Performance:", portfolioPerformance);
+
     const chartMatch = message.toLowerCase().match(/show (?:me )?(?:the )?(?:chart|graph|price) (?:for |of )?(\w+)/);
     let chartData = null;
     
@@ -86,21 +154,24 @@ export const sendChatMessage = async (message: string, conversationHistory: { ro
       })
     }));
 
-    console.log("Sending request to OpenAI with market data and transaction context");
+    console.log("Sending request to OpenAI with market data and portfolio analysis");
     
     const messages = [
       {
         role: "system",
-        content: `You are a helpful cryptocurrency assistant with access to both market data and transaction history. 
+        content: `You are a helpful cryptocurrency assistant with access to both market data and detailed portfolio analysis. 
 
 Current market data for top cryptocurrencies:
 ${JSON.stringify(cryptoContext.slice(0, 20), null, 2)}
 
-Portfolio Statistics:
-- Total Invested: $${portfolioStats.totalInvested.toFixed(2)}
-- Total Sold: $${portfolioStats.totalSold.toFixed(2)}
-- Number of Buy Transactions: ${portfolioStats.transactions.buy}
-- Number of Sell Transactions: ${portfolioStats.transactions.sell}
+Portfolio Performance:
+- Total Allocated: $${portfolioPerformance.totalAllocated.toFixed(2)}
+- Current Portfolio Value: $${portfolioPerformance.currentValue.toFixed(2)}
+- Total Realized (Sold): $${portfolioPerformance.totalSold.toFixed(2)}
+- Overall Return: ${portfolioPerformance.percentageChange.toFixed(2)}%
+
+Detailed Portfolio Analysis:
+${JSON.stringify(portfolioAnalysis.coins, null, 2)}
 
 Transaction History Summary:
 ${JSON.stringify(transactionData.slice(0, 5), null, 2)}
@@ -109,7 +180,11 @@ When asked about specific cryptocurrencies or portfolio analysis:
 1. Provide information from current market data
 2. Include relevant transaction history insights
 3. Format numbers clearly and include rank, price, 24h change, and market cap when available
-4. If asked about portfolio performance, use the transaction data
+4. If asked about portfolio performance, provide detailed analysis including:
+   - Current value vs allocated capital
+   - Individual coin performance
+   - Average entry prices vs current prices
+   - Unrealized gains/losses
 5. If asked to show a chart, one will be displayed automatically - acknowledge this in your response`
       },
       ...conversationHistory.slice(-5),
