@@ -10,6 +10,7 @@ import { useEffect, useState } from "react";
 import { fetchIndividualAsset } from "@/services/api";
 import { PortfolioStats } from "@/components/crypto/PortfolioStats";
 import { TransactionsTable } from "@/components/crypto/TransactionsTable";
+import { PortfolioAnalytics } from "@/components/crypto/PortfolioAnalytics";
 
 const CryptoTransactions = () => {
   const navigate = useNavigate();
@@ -141,14 +142,24 @@ const CryptoTransactions = () => {
         </Button>
       </div>
 
-      <PortfolioStats 
-        totalAllocated={portfolioStats.totalAllocated}
-        currentValue={portfolioStats.currentValue}
-        percentageChange={portfolioStats.percentageChange}
-      />
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <PortfolioStats 
+            totalAllocated={portfolioStats.totalAllocated}
+            currentValue={portfolioStats.currentValue}
+            percentageChange={portfolioStats.percentageChange}
+          />
+          <PortfolioAnalytics 
+            transactions={transactions || []}
+            totalAllocated={portfolioStats.totalAllocated}
+            currentValue={portfolioStats.currentValue}
+            percentageChange={portfolioStats.percentageChange}
+          />
+        </div>
+      </div>
 
       <TransactionsTable 
-        transactions={transactions}
+        transactions={transactions || []}
         currentPrices={currentPrices}
         onCoinClick={handleCoinClick}
       />
