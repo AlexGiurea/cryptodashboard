@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchTopAssets } from "@/services/api";
 import { Link } from "react-router-dom";
-import { ChatBot } from "@/components/ChatBot";
 import { FileText } from "lucide-react";
 
 const formatPrice = (price: string) => {
@@ -96,7 +95,6 @@ const Index = () => {
           </tbody>
         </table>
       </div>
-      <ChatBot />
     </div>
   );
 };

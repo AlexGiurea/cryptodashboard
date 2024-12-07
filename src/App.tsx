@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ChatBot } from "@/components/ChatBot";
 import Index from "./pages/Index";
 import AssetDetail from "./pages/AssetDetail";
 import AICryptos from "./pages/AICryptos";
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/ai-cryptos" element={<AICryptos />} />
           <Route path="/transactions" element={<CryptoTransactions />} />
         </Routes>
+        <ChatBot />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
