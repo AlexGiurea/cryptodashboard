@@ -3,9 +3,8 @@ export const coinIdMappings: Record<string, string> = {
   "near": "near-protocol",
   "tai": "tether", // Map TAI to a stablecoin since it's not available in CoinCap
   "sol": "solana",
-  "grass": "tether", // Map GRASS to a stablecoin as fallback
-  "render": "tether", // Map RENDER to a stablecoin as fallback
-  // Add more mappings here as needed
+  "grass": "grass", // Keep GRASS separate to handle its price specially
+  "render": "render", // Keep RENDER separate to handle its price specially
 };
 
 export const getCoinApiId = (coinName: string): string => {
@@ -22,8 +21,8 @@ export const isSpecialToken = (coinName: string): boolean => {
 export const getSpecialTokenPrice = (coinName: string): string => {
   const tokenPrices: Record<string, string> = {
     "tai": "$0.38",
-    "grass": "$1.00",
-    "render": "$1.00"
+    "grass": "$1.00", // This will be overridden by acquisition price
+    "render": "$1.00" // This will be overridden by acquisition price
   };
   return tokenPrices[coinName.toLowerCase()] || "N/A";
 };

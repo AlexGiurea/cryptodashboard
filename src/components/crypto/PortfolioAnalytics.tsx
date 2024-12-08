@@ -14,20 +14,24 @@ interface PortfolioAnalyticsProps {
 
 export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
   transactions,
-  totalAllocated,
   currentValue,
-  percentageChange
 }) => {
   // Calculate net token amounts and current values for each coin
   const calculateNetTokens = () => {
     const netTokens: Record<string, number> = {};
     const currentValues: Record<string, number> = {};
+    const acquisitionPrices: Record<string, number> = {};
 
-    // First pass: Calculate net token amounts
+    // First pass: Calculate net token amounts and store acquisition prices for special tokens
     transactions.forEach((tx) => {
       const coinName = tx["Coin Name"];
       const tokenAmount = tx["Sum (in token)"] || 0;
       const txType = tx["Result of acquisition"]?.toLowerCase();
+
+      // Store acquisition price for special tokens
+      if ((coinName === "GRASS" || coinName === "RENDER") && !acquisitionPrices[coinName]) {
+        acquisitionPrices[coinName] = parseFloat(tx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
+      }
 
       if (!netTokens[coinName]) {
         netTokens[coinName] = 0;
@@ -40,7 +44,7 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
       }
     });
 
-    // Second pass: Calculate current values using most recent price for each coin
+    // Second pass: Calculate current values using appropriate prices for each coin
     Object.entries(netTokens).forEach(([coinName, tokenAmount]) => {
       if (tokenAmount <= 0) return; // Skip coins with zero or negative balance
 
@@ -56,9 +60,12 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
       if (recentTx) {
         let currentPrice;
         
-        if (isSpecialToken(coinName)) {
-          // For special tokens like GRASS and TAI, use the original transaction price
-          currentPrice = parseFloat(recentTx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
+        if (coinName === "GRASS" || coinName === "RENDER") {
+          // For GRASS and RENDER, use their acquisition prices
+          currentPrice = acquisitionPrices[coinName];
+        } else if (coinName === "TAI") {
+          // For TAI, use fixed price
+          currentPrice = 0.38;
         } else {
           // For regular tokens, use the current market price
           currentPrice = parseFloat(recentTx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
@@ -101,8 +108,6 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
   };
 
   const data = calculateNetTokens();
-  const profit = currentValue - totalAllocated;
-  const isProfitable = profit >= 0;
 
   return (
     <Dialog>
@@ -111,49 +116,18 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
           variant="outline" 
           className="neo-brutalist bg-white hover:bg-gray-50"
         >
-          More Analytics
+          Portfolio Distribution
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-[#121212] text-white border-gray-800">
         <DialogHeader>
-          <DialogTitle className="text-2xl font-bold mb-6 text-white">Portfolio Analytics</DialogTitle>
+          <DialogTitle className="text-2xl font-bold mb-6 text-white">Portfolio Distribution</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-8">
-          {/* Portfolio Stats Summary */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-[#1E1E1E] p-4 rounded-lg border border-gray-800">
-              <h3 className="text-sm font-semibold text-gray-400">Total Allocated</h3>
-              <p className="text-xl font-bold text-white">
-                ${totalAllocated.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}
-              </p>
-            </div>
-            <div className="bg-[#1E1E1E] p-4 rounded-lg border border-gray-800">
-              <h3 className="text-sm font-semibold text-gray-400">Current Value</h3>
-              <p className="text-xl font-bold text-white">
-                ${currentValue.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}
-              </p>
-            </div>
-            <div className="bg-[#1E1E1E] p-4 rounded-lg border border-gray-800">
-              <h3 className="text-sm font-semibold text-gray-400">Total Profit/Loss</h3>
-              <p className={`text-xl font-bold ${isProfitable ? 'text-green-500' : 'text-red-500'}`}>
-                {isProfitable ? '+' : ''}{profit.toLocaleString(undefined, {
-                  minimumFractionDigits: 2,
-                  maximumFractionDigits: 2
-                })}
-              </p>
-            </div>
-          </div>
-
           {/* Pie Chart */}
           <div className="bg-[#1E1E1E] p-6 rounded-lg border border-gray-800">
-            <h2 className="text-xl font-bold mb-4 text-white">Portfolio Allocation</h2>
+            <h2 className="text-xl font-bold mb-4 text-white">Current Portfolio Value Distribution</h2>
             <div className="flex flex-col items-center gap-8">
               <div className="relative w-full max-w-2xl">
                 <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center z-10">
@@ -163,7 +137,7 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
                       maximumFractionDigits: 2
                     })}
                   </div>
-                  <div className="text-sm text-gray-400">Current Value</div>
+                  <div className="text-sm text-gray-400">Total Value</div>
                 </div>
                 <PieChart width={600} height={400}>
                   <Pie
@@ -200,7 +174,7 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
                 </PieChart>
               </div>
               
-              {/* Separate Legend Section */}
+              {/* Legend Grid */}
               <div className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 bg-[#1A1A1A] rounded-lg">
                 {data.map((entry, index) => (
                   <div 
