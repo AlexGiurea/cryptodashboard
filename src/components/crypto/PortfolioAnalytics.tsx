@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { Transaction } from "@/types/crypto";
-import { isSpecialToken } from '@/utils/coinIdMappings';
 
 interface PortfolioAnalyticsProps {
   transactions: Transaction[];
@@ -22,13 +21,13 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
     const currentValues: Record<string, number> = {};
     const acquisitionPrices: Record<string, number> = {};
 
-    // First pass: Calculate net token amounts and store acquisition prices for special tokens
+    // First pass: Calculate net token amounts and store acquisition prices
     transactions.forEach((tx) => {
       const coinName = tx["Coin Name"];
       const tokenAmount = tx["Sum (in token)"] || 0;
       const txType = tx["Result of acquisition"]?.toLowerCase();
 
-      // Store acquisition price for special tokens
+      // Store first acquisition price for GRASS and RENDER
       if ((coinName === "GRASS" || coinName === "RENDER") && !acquisitionPrices[coinName]) {
         acquisitionPrices[coinName] = parseFloat(tx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
       }
@@ -37,6 +36,7 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
         netTokens[coinName] = 0;
       }
 
+      // Calculate net token amount considering all transaction types
       if (txType === "buy" || txType === "swap buy") {
         netTokens[coinName] += tokenAmount;
       } else if (txType === "sell" || txType === "swap sell") {
@@ -44,11 +44,11 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
       }
     });
 
-    // Second pass: Calculate current values using appropriate prices for each coin
+    // Second pass: Calculate current values using appropriate prices
     Object.entries(netTokens).forEach(([coinName, tokenAmount]) => {
       if (tokenAmount <= 0) return; // Skip coins with zero or negative balance
 
-      // Get the most recent transaction for this coin to get the current price
+      // Get the most recent transaction for this coin
       const recentTx = [...transactions]
         .filter(tx => tx["Coin Name"] === coinName)
         .sort((a, b) => {
@@ -61,21 +61,24 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
         let currentPrice;
         
         if (coinName === "GRASS" || coinName === "RENDER") {
-          // For GRASS and RENDER, use their acquisition prices
+          // Use acquisition price for GRASS and RENDER
           currentPrice = acquisitionPrices[coinName];
+          console.log(`Using acquisition price for ${coinName}: $${currentPrice}`);
         } else if (coinName === "TAI") {
-          // For TAI, use fixed price
+          // Fixed price for TAI
           currentPrice = 0.38;
         } else {
-          // For regular tokens, use the current market price
+          // Use current market price for other tokens
           currentPrice = parseFloat(recentTx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
         }
         
-        currentValues[coinName] = tokenAmount * currentPrice;
+        const value = tokenAmount * currentPrice;
+        currentValues[coinName] = value;
+        console.log(`${coinName} value: $${value} (${tokenAmount} tokens @ $${currentPrice})`);
       }
     });
 
-    // Convert to array format for the pie chart
+    // Convert to array format for pie chart
     return Object.entries(currentValues)
       .filter(([_, value]) => value > 0)
       .map(([name, value]) => ({
@@ -125,7 +128,6 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
         </DialogHeader>
         
         <div className="space-y-8">
-          {/* Pie Chart */}
           <div className="bg-[#1E1E1E] p-6 rounded-lg border border-gray-800">
             <h2 className="text-xl font-bold mb-4 text-white">Current Portfolio Value Distribution</h2>
             <div className="flex flex-col items-center gap-8">
@@ -174,7 +176,6 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
                 </PieChart>
               </div>
               
-              {/* Legend Grid */}
               <div className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4 bg-[#1A1A1A] rounded-lg">
                 {data.map((entry, index) => (
                   <div 
