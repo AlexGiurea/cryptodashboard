@@ -1,8 +1,9 @@
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PieChart, Pie, Cell, Legend, Tooltip } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip } from 'recharts';
 import { Transaction } from "@/types/crypto";
+import { isSpecialToken } from '@/utils/coinIdMappings';
 
 interface PortfolioAnalyticsProps {
   transactions: Transaction[];
@@ -53,7 +54,16 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
         })[0];
 
       if (recentTx) {
-        const currentPrice = parseFloat(recentTx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
+        let currentPrice;
+        
+        if (isSpecialToken(coinName)) {
+          // For special tokens like GRASS and TAI, use the original transaction price
+          currentPrice = parseFloat(recentTx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
+        } else {
+          // For regular tokens, use the current market price
+          currentPrice = parseFloat(recentTx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
+        }
+        
         currentValues[coinName] = tokenAmount * currentPrice;
       }
     });

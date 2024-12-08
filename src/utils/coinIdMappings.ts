@@ -2,7 +2,7 @@
 export const coinIdMappings: Record<string, string> = {
   "near": "near-protocol",
   "tai": "tether", // Map TAI to a stablecoin since it's not available in CoinCap
-  "sol": "solana", // Add mapping for Solana
+  "sol": "solana",
   "grass": "tether", // Map GRASS to a stablecoin as fallback
   "render": "tether", // Map RENDER to a stablecoin as fallback
   // Add more mappings here as needed
