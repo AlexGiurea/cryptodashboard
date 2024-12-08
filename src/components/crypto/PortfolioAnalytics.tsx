@@ -26,17 +26,19 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
       const coinName = tx["Coin Name"];
       const tokenAmount = tx["Sum (in token)"] || 0;
       const txType = tx["Result of acquisition"]?.toLowerCase();
+      const price = parseFloat(tx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
 
-      // Store first acquisition price for GRASS and RENDER
+      // Store first acquisition price for special tokens
       if ((coinName === "GRASS" || coinName === "RENDER") && !acquisitionPrices[coinName]) {
-        acquisitionPrices[coinName] = parseFloat(tx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
+        acquisitionPrices[coinName] = price;
+        console.log(`Stored acquisition price for ${coinName}: $${price}`);
       }
 
       if (!netTokens[coinName]) {
         netTokens[coinName] = 0;
       }
 
-      // Calculate net token amount considering all transaction types
+      // Calculate net token amount
       if (txType === "buy" || txType === "swap buy") {
         netTokens[coinName] += tokenAmount;
       } else if (txType === "sell" || txType === "swap sell") {
@@ -44,38 +46,35 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
       }
     });
 
-    // Second pass: Calculate current values using appropriate prices
+    // Second pass: Calculate current values
     Object.entries(netTokens).forEach(([coinName, tokenAmount]) => {
       if (tokenAmount <= 0) return; // Skip coins with zero or negative balance
 
-      // Get the most recent transaction for this coin
-      const recentTx = [...transactions]
-        .filter(tx => tx["Coin Name"] === coinName)
-        .sort((a, b) => {
-          const dateA = new Date(a["Transaction Date"] || 0);
-          const dateB = new Date(b["Transaction Date"] || 0);
-          return dateB.getTime() - dateA.getTime();
-        })[0];
+      let currentPrice;
+      
+      if (coinName === "GRASS" || coinName === "RENDER") {
+        // Use acquisition price for special tokens
+        currentPrice = acquisitionPrices[coinName];
+        console.log(`Using acquisition price for ${coinName}: $${currentPrice}`);
+      } else if (coinName === "TAI") {
+        // Fixed price for TAI
+        currentPrice = 0.38;
+      } else {
+        // Get the most recent transaction for regular tokens
+        const recentTx = [...transactions]
+          .filter(tx => tx["Coin Name"] === coinName)
+          .sort((a, b) => {
+            const dateA = new Date(a["Transaction Date"] || 0);
+            const dateB = new Date(b["Transaction Date"] || 0);
+            return dateB.getTime() - dateA.getTime();
+          })[0];
 
-      if (recentTx) {
-        let currentPrice;
-        
-        if (coinName === "GRASS" || coinName === "RENDER") {
-          // Use acquisition price for GRASS and RENDER
-          currentPrice = acquisitionPrices[coinName];
-          console.log(`Using acquisition price for ${coinName}: $${currentPrice}`);
-        } else if (coinName === "TAI") {
-          // Fixed price for TAI
-          currentPrice = 0.38;
-        } else {
-          // Use current market price for other tokens
-          currentPrice = parseFloat(recentTx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
-        }
-        
-        const value = tokenAmount * currentPrice;
-        currentValues[coinName] = value;
-        console.log(`${coinName} value: $${value} (${tokenAmount} tokens @ $${currentPrice})`);
+        currentPrice = parseFloat(recentTx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
       }
+      
+      const value = tokenAmount * currentPrice;
+      currentValues[coinName] = value;
+      console.log(`${coinName} value: $${value.toFixed(2)} (${tokenAmount} tokens @ $${currentPrice})`);
     });
 
     // Convert to array format for pie chart

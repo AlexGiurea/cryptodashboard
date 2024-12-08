@@ -228,7 +228,7 @@ When asked about specific cryptocurrencies or portfolio analysis:
 export const fetchTopAssets = async (): Promise<Asset[]> => {
   try {
     console.log("Fetching top assets...");
-    const response = await fetch(`${BASE_URL}/assets?limit=100`);
+    const response = await fetchWithRetry(`${BASE_URL}/assets?limit=100`);
     const data = await response.json();
     console.log("Fetched top assets successfully:", data.data.length, "assets");
     return data.data;
@@ -242,7 +242,7 @@ export const fetchTopAssets = async (): Promise<Asset[]> => {
 export const fetchAssetHistory = async (id: string): Promise<AssetHistory[]> => {
   try {
     console.log(`Fetching history for asset ${id}...`);
-    const response = await fetch(
+    const response = await fetchWithRetry(
       `${BASE_URL}/assets/${id}/history?interval=h1`
     );
     
@@ -262,10 +262,20 @@ export const fetchAssetHistory = async (id: string): Promise<AssetHistory[]> => 
 
 export const fetchIndividualAsset = async (id: string): Promise<Asset | null> => {
   try {
+    // Special handling for GRASS and RENDER
+    if (id.toLowerCase() === 'grass' || id.toLowerCase() === 'render') {
+      console.log(`Skipping API call for ${id} as it's a special token`);
+      return null;
+    }
+
     console.log(`Fetching individual asset ${id}...`);
-    const response = await fetch(`${BASE_URL}/assets/${id}`);
+    const response = await fetchWithRetry(`${BASE_URL}/assets/${id}`);
     
     if (!response.ok) {
+      if (response.status === 404) {
+        console.log(`Asset ${id} not found in CoinCap API`);
+        return null;
+      }
       console.error(`Failed to fetch asset ${id}: ${response.status}`);
       return null;
     }
@@ -276,5 +286,38 @@ export const fetchIndividualAsset = async (id: string): Promise<Asset | null> =>
   } catch (error) {
     console.error(`Error fetching asset ${id}:`, error);
     return null;
+  }
+};
+
+// Helper function to handle retries with exponential backoff
+const fetchWithRetry = async (
+  url: string, 
+  options: RequestInit = {}, 
+  retries = 3,
+  delay = 1000
+): Promise<Response> => {
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        'Accept': 'application/json',
+      }
+    });
+    
+    if (response.status === 429 && retries > 0) { // Rate limit hit
+      console.log(`Rate limit hit, retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return fetchWithRetry(url, options, retries - 1, delay * 2);
+    }
+    
+    return response;
+  } catch (error) {
+    if (retries > 0) {
+      console.log(`Fetch failed, retrying in ${delay}ms...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return fetchWithRetry(url, options, retries - 1, delay * 2);
+    }
+    throw error;
   }
 };
