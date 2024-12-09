@@ -6,24 +6,32 @@ const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseKey, {
   auth: {
-    persistSession: true,
+    persistSession: false,
+    detectSessionInUrl: false,
     autoRefreshToken: true,
+  },
+  db: {
+    schema: 'public'
   },
   global: {
     headers: {
-      'Access-Control-Allow-Origin': '*',
+      'Authorization': `Bearer ${supabaseKey}`,
+      'apikey': supabaseKey,
       'Content-Type': 'application/json',
+      'Prefer': 'return=minimal'
     },
   },
 });
 
-// Add error handling for fetch operations
-supabase.from('Crypto_Ledger').select('*').then(
-  ({ data, error }) => {
+// Test connection and log result
+console.log('Initializing Supabase client...');
+supabase.from('Crypto_Ledger').select('*', { count: 'exact' }).then(
+  ({ data, error, count }) => {
     if (error) {
       console.error('Error initializing Supabase client:', error);
     } else {
-      console.log('Successfully connected to Supabase');
+      console.log('Successfully connected to Supabase. Row count:', count);
+      console.log('First few records:', data?.slice(0, 2));
     }
   }
 );
