@@ -27,7 +27,9 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
   }, [currentPrices]);
 
   const getPriceChangeClass = (coinName: string): string => {
-    if (coinName.toLowerCase() === "tai") return "";
+    if (coinName.toLowerCase() === "tai" || 
+        coinName.toLowerCase() === "grass" || 
+        coinName.toLowerCase() === "render") return "";
     
     const current = parseFloat(currentPrices[coinName]?.replace(/[^0-9.-]/g, '') || '0');
     const previous = parseFloat(previousPrices.current[coinName]?.replace(/[^0-9.-]/g, '') || '0');
@@ -38,6 +40,25 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
       return "text-red-600 bg-red-100";
     }
     return "";
+  };
+
+  const getCurrentPrice = (coinName: string): string => {
+    const upperCaseName = coinName.toUpperCase();
+    
+    // Handle special tokens with fixed prices
+    if (upperCaseName === "GRASS") {
+      console.log("Using fixed price for GRASS: $2.88");
+      return "$2.88";
+    }
+    if (upperCaseName === "RENDER") {
+      console.log("Using fixed price for RENDER: $8.51");
+      return "$8.51";
+    }
+    if (upperCaseName === "TAI") {
+      return "$0.38";
+    }
+
+    return currentPrices[coinName] || "Loading...";
   };
 
   return (
@@ -78,9 +99,7 @@ export const TransactionsTable: React.FC<TransactionsTableProps> = ({
                 <TableCell 
                   className={`border-x-2 border-black transition-all duration-300 px-4 py-2 rounded ${getPriceChangeClass(tx["Coin Name"])}`}
                 >
-                  {tx["Coin Name"].toLowerCase() === "tai" 
-                    ? "$0.38"
-                    : currentPrices[tx["Coin Name"]] || "Loading..."}
+                  {getCurrentPrice(tx["Coin Name"])}
                 </TableCell>
                 <TableCell className="border-x-2 border-black">{tx["Transaction Date"]}</TableCell>
                 <TableCell className="border-x-2 border-black">{tx["Transaction platform"]}</TableCell>
