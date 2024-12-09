@@ -50,8 +50,8 @@ export const PieChartComponent = ({ data, currentValue }: PieChartComponentProps
             `$${value.toLocaleString(undefined, {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2
-            })} (${((value / currentValue) * 100).toFixed(2)}%)`,
-            'Value'
+            })}`,
+            'Current Value'
           ]}
         />
       </PieChart>
