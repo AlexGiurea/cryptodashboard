@@ -19,20 +19,12 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
   const calculateNetTokens = () => {
     const netTokens: Record<string, number> = {};
     const currentValues: Record<string, number> = {};
-    const acquisitionPrices: Record<string, number> = {};
 
-    // First pass: Calculate net token amounts and store acquisition prices
+    // First pass: Calculate net token amounts
     transactions.forEach((tx) => {
       const coinName = tx["Coin Name"];
       const tokenAmount = tx["Sum (in token)"] || 0;
       const txType = tx["Result of acquisition"]?.toLowerCase();
-      const price = parseFloat(tx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
-
-      // Store first acquisition price for special tokens
-      if ((coinName === "GRASS" || coinName === "RENDER") && !acquisitionPrices[coinName]) {
-        acquisitionPrices[coinName] = price;
-        console.log(`Stored acquisition price for ${coinName}: $${price}`);
-      }
 
       if (!netTokens[coinName]) {
         netTokens[coinName] = 0;
@@ -46,16 +38,19 @@ export const PortfolioAnalytics: React.FC<PortfolioAnalyticsProps> = ({
       }
     });
 
-    // Second pass: Calculate current values
+    // Second pass: Calculate current values using fixed prices for GRASS and RENDER
     Object.entries(netTokens).forEach(([coinName, tokenAmount]) => {
       if (tokenAmount <= 0) return; // Skip coins with zero or negative balance
 
       let currentPrice;
       
-      if (coinName === "GRASS" || coinName === "RENDER") {
-        // Use acquisition price for special tokens
-        currentPrice = acquisitionPrices[coinName];
-        console.log(`Using acquisition price for ${coinName}: $${currentPrice}`);
+      // Set fixed prices for GRASS and RENDER
+      if (coinName === "GRASS") {
+        currentPrice = 2.88;
+        console.log(`Using fixed price for GRASS: $${currentPrice}`);
+      } else if (coinName === "RENDER") {
+        currentPrice = 8.51;
+        console.log(`Using fixed price for RENDER: $${currentPrice}`);
       } else if (coinName === "TAI") {
         // Fixed price for TAI
         currentPrice = 0.38;
