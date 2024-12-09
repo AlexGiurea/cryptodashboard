@@ -21,21 +21,23 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
     }
   });
 
-  // Second pass: Calculate current values using fixed prices for GRASS and RENDER
+  // Second pass: Calculate current values using fixed prices for special tokens
   Object.entries(netTokens).forEach(([coinName, tokenAmount]) => {
     if (tokenAmount <= 0) return;
 
     let currentPrice;
+    const upperCaseName = coinName.toUpperCase();
     
-    // Set fixed prices for GRASS and RENDER
-    if (coinName === "GRASS") {
+    // Set fixed prices for special tokens
+    if (upperCaseName === "GRASS") {
       currentPrice = 2.88;
       console.log(`Using fixed price for GRASS: $${currentPrice}`);
-    } else if (coinName === "RENDER") {
+    } else if (upperCaseName === "RENDER") {
       currentPrice = 8.51;
       console.log(`Using fixed price for RENDER: $${currentPrice}`);
-    } else if (coinName === "TAI") {
+    } else if (upperCaseName === "TAI") {
       currentPrice = 0.38;
+      console.log(`Using fixed price for TAI: $${currentPrice}`);
     } else {
       // Get the most recent transaction for regular tokens
       const recentTx = [...transactions]
@@ -50,17 +52,21 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
     }
     
     const value = tokenAmount * currentPrice;
-    currentValues[coinName] = value;
-    console.log(`${coinName} value: $${value.toFixed(2)} (${tokenAmount} tokens @ $${currentPrice})`);
+    if (value > 0) {
+      currentValues[coinName] = value;
+      console.log(`${coinName} value: $${value.toFixed(2)} (${tokenAmount} tokens @ $${currentPrice})`);
+    }
   });
+
+  // Calculate total value for percentage calculations
+  const totalValue = Object.values(currentValues).reduce((sum, val) => sum + val, 0);
 
   // Convert to array format for pie chart
   return Object.entries(currentValues)
-    .filter(([_, value]) => value > 0)
     .map(([name, value]) => ({
       name,
       value,
-      percentage: ((value / Object.values(currentValues).reduce((sum, val) => sum + val, 0)) * 100).toFixed(2)
+      percentage: ((value / totalValue) * 100).toFixed(2)
     }))
     .sort((a, b) => b.value - a.value);
 };
