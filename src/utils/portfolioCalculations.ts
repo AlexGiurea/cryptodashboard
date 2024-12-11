@@ -15,6 +15,7 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
       currentValues[coinName] = 0; // Initialize all coins with 0 value
     }
 
+    // For buy transactions, add to net tokens
     if (txType === "buy" || txType === "swap buy") {
       netTokens[coinName] += tokenAmount;
     } else if (txType === "sell" || txType === "swap sell") {
@@ -61,10 +62,12 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
       }
     }
 
-    // Calculate total USD value for this coin
-    const value = tokenAmount * currentPrice;
+    // Calculate total USD value for this coin using absolute token amount
+    // This ensures we consider the allocated value regardless of buy/sell
+    const absoluteTokenAmount = Math.abs(tokenAmount);
+    const value = absoluteTokenAmount * currentPrice;
     currentValues[coinName] = value;
-    console.log(`${coinName} current holdings: ${tokenAmount} tokens @ $${currentPrice} = $${value.toFixed(2)}`);
+    console.log(`${coinName} current holdings: ${absoluteTokenAmount} tokens @ $${currentPrice} = $${value.toFixed(2)}`);
   });
 
   // Calculate total portfolio value for percentage calculations
