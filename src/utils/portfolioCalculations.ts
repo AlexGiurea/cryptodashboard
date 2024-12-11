@@ -25,7 +25,11 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
 
   // Second pass: Calculate current USD values
   Object.entries(netTokens).forEach(([coinName, tokenAmount]) => {
-    if (tokenAmount <= 0) return;
+    // Only process if we have a positive token amount
+    if (tokenAmount <= 0) {
+      console.log(`Skipping ${coinName} as token amount is ${tokenAmount}`);
+      return;
+    }
 
     const upperCaseName = coinName.toUpperCase();
     let currentPrice;
@@ -50,7 +54,13 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
           return dateB.getTime() - dateA.getTime();
         })[0];
 
-      currentPrice = parseFloat(recentTx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
+      if (recentTx) {
+        currentPrice = parseFloat(recentTx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
+        console.log(`Using most recent transaction price for ${coinName}: $${currentPrice}`);
+      } else {
+        console.log(`No recent transaction found for ${coinName}, skipping`);
+        return;
+      }
     }
 
     // Calculate total USD value for this coin
@@ -58,6 +68,8 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
     if (value > 0) {
       currentValues[coinName] = value;
       console.log(`${coinName} current holdings: ${tokenAmount} tokens @ $${currentPrice} = $${value.toFixed(2)}`);
+    } else {
+      console.log(`Skipping ${coinName} as calculated value is ${value}`);
     }
   });
 
@@ -65,7 +77,7 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
   const totalValue = Object.values(currentValues).reduce((sum, val) => sum + val, 0);
   console.log("Total portfolio value:", totalValue);
 
-  // Convert to array format for pie chart, including all coins
+  // Convert to array format for pie chart, including all coins with value
   return Object.entries(currentValues)
     .map(([name, value]) => ({
       name,
