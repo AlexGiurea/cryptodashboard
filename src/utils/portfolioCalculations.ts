@@ -4,7 +4,7 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
   const netTokens: Record<string, number> = {};
   const currentValues: Record<string, number> = {};
 
-  // First pass: Calculate net token amounts for each coin and initialize all coins
+  // First pass: Calculate allocated token amounts for each coin (only buy transactions)
   transactions.forEach((tx) => {
     const coinName = tx["Coin Name"];
     const tokenAmount = tx["Sum (in token)"] || 0;
@@ -12,18 +12,16 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
 
     if (!netTokens[coinName]) {
       netTokens[coinName] = 0;
-      currentValues[coinName] = 0; // Initialize all coins with 0 value
+      currentValues[coinName] = 0;
     }
 
-    // For buy transactions, add to net tokens
+    // Only consider buy transactions for allocation
     if (txType === "buy" || txType === "swap buy") {
       netTokens[coinName] += tokenAmount;
-    } else if (txType === "sell" || txType === "swap sell") {
-      netTokens[coinName] -= Math.abs(tokenAmount);
     }
   });
 
-  console.log("Net token amounts:", netTokens);
+  console.log("Allocated token amounts:", netTokens);
 
   // Second pass: Calculate current USD values
   Object.entries(netTokens).forEach(([coinName, tokenAmount]) => {
@@ -62,12 +60,10 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
       }
     }
 
-    // Calculate total USD value for this coin using absolute token amount
-    // This ensures we consider the allocated value regardless of buy/sell
-    const absoluteTokenAmount = Math.abs(tokenAmount);
-    const value = absoluteTokenAmount * currentPrice;
+    // Calculate total USD value for this coin based on allocated tokens
+    const value = tokenAmount * currentPrice;
     currentValues[coinName] = value;
-    console.log(`${coinName} current holdings: ${absoluteTokenAmount} tokens @ $${currentPrice} = $${value.toFixed(2)}`);
+    console.log(`${coinName} allocated holdings: ${tokenAmount} tokens @ $${currentPrice} = $${value.toFixed(2)}`);
   });
 
   // Calculate total portfolio value for percentage calculations
