@@ -52,7 +52,8 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
         })[0];
 
       if (recentTx) {
-        currentPrice = parseFloat(recentTx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
+        // Remove the '$' symbol and any commas from the price string before parsing
+        currentPrice = parseFloat(recentTx["Price of token at the moment"]?.replace(/[$,]/g, '') || '0');
         console.log(`Using most recent transaction price for ${coinName}: $${currentPrice}`);
       } else {
         console.log(`No recent transaction found for ${coinName}, using 0`);
