@@ -4,7 +4,7 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
   const netTokens: Record<string, number> = {};
   const currentValues: Record<string, number> = {};
 
-  // First pass: Calculate net token amounts for each coin
+  // First pass: Calculate net token amounts for each coin and initialize all coins
   transactions.forEach((tx) => {
     const coinName = tx["Coin Name"];
     const tokenAmount = tx["Sum (in token)"] || 0;
@@ -12,6 +12,7 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
 
     if (!netTokens[coinName]) {
       netTokens[coinName] = 0;
+      currentValues[coinName] = 0; // Initialize all coins with 0 value
     }
 
     if (txType === "buy" || txType === "swap buy") {
@@ -25,12 +26,6 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
 
   // Second pass: Calculate current USD values
   Object.entries(netTokens).forEach(([coinName, tokenAmount]) => {
-    // Only process if we have a positive token amount
-    if (tokenAmount <= 0) {
-      console.log(`Skipping ${coinName} as token amount is ${tokenAmount}`);
-      return;
-    }
-
     const upperCaseName = coinName.toUpperCase();
     let currentPrice;
 
@@ -44,6 +39,9 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
     } else if (upperCaseName === "TAI") {
       currentPrice = 0.38;
       console.log(`Using fixed price for TAI: $${currentPrice}`);
+    } else if (upperCaseName === "TARS AI") {
+      currentPrice = 0.00;
+      console.log(`Using fixed price for TARS AI: $${currentPrice}`);
     } else {
       // For regular tokens, use the most recent transaction price
       const recentTx = [...transactions]
@@ -58,26 +56,22 @@ export const calculatePortfolioDistribution = (transactions: Transaction[]) => {
         currentPrice = parseFloat(recentTx["Price of token at the moment"]?.replace(/[^0-9.]/g, '') || '0');
         console.log(`Using most recent transaction price for ${coinName}: $${currentPrice}`);
       } else {
-        console.log(`No recent transaction found for ${coinName}, skipping`);
-        return;
+        console.log(`No recent transaction found for ${coinName}, using 0`);
+        currentPrice = 0;
       }
     }
 
     // Calculate total USD value for this coin
     const value = tokenAmount * currentPrice;
-    if (value > 0) {
-      currentValues[coinName] = value;
-      console.log(`${coinName} current holdings: ${tokenAmount} tokens @ $${currentPrice} = $${value.toFixed(2)}`);
-    } else {
-      console.log(`Skipping ${coinName} as calculated value is ${value}`);
-    }
+    currentValues[coinName] = value;
+    console.log(`${coinName} current holdings: ${tokenAmount} tokens @ $${currentPrice} = $${value.toFixed(2)}`);
   });
 
   // Calculate total portfolio value for percentage calculations
   const totalValue = Object.values(currentValues).reduce((sum, val) => sum + val, 0);
   console.log("Total portfolio value:", totalValue);
 
-  // Convert to array format for pie chart, including all coins with value
+  // Convert to array format for pie chart, including ALL coins
   return Object.entries(currentValues)
     .map(([name, value]) => ({
       name,
