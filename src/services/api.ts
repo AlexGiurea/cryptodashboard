@@ -262,9 +262,11 @@ export const fetchAssetHistory = async (id: string): Promise<AssetHistory[]> => 
 
 export const fetchIndividualAsset = async (id: string): Promise<Asset | null> => {
   try {
-    // Special handling for GRASS and RENDER
-    if (id.toLowerCase() === 'grass' || id.toLowerCase() === 'render') {
-      console.log(`Skipping API call for ${id} as it's a special token`);
+    const coinName = id.replace(/-/g, ' ');
+    
+    // Skip API call for unlisted tokens
+    if (!isListedOnCoinCap(coinName)) {
+      console.log(`Skipping API call for ${coinName} as it's not listed on CoinCap`);
       return null;
     }
 
@@ -320,4 +322,10 @@ const fetchWithRetry = async (
     }
     throw error;
   }
+};
+
+// Helper to check if a token is listed on CoinCap
+export const isListedOnCoinCap = (coinName: string): boolean => {
+  const unlisted = ["tai", "grass", "render", "tars ai"];
+  return !unlisted.includes(coinName.toLowerCase());
 };
