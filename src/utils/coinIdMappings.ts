@@ -5,7 +5,9 @@ export const coinIdMappings: Record<string, string> = {
   "sol": "solana",
   "grass": "grass", // Keep GRASS separate to handle its price specially
   "render": "render", // Keep RENDER separate to handle its price specially
-  "tars ai": "tars-ai" // Add mapping for Tars AI
+  "tars ai": "tars-ai", // Add mapping for Tars AI
+  "vectorspace": "vxv", // Add correct mapping for Vectorspace
+  "fetch-ai": "fetch", // Add correct mapping for Fetch.ai
 };
 
 export const getCoinApiId = (coinName: string): string => {

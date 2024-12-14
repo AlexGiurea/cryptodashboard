@@ -4,16 +4,16 @@ import { Link } from "react-router-dom";
 import type { Asset } from "@/services/api";
 
 const AI_RELATED_TOKENS = [
-  "injective-protocol",  // INJ (fixed from injective)
-  "fetch-ai",           // FET (fixed from fetch)
+  "injective-protocol",  // INJ
+  "fetch-ai",           // FET
   "singularitynet",     // AGIX
   "ocean-protocol",     // OCEAN
   "oasis-network",      // ROSE
   "render-token",       // RNDR
   "akash-network",      // AKT
-  "vectorspace",        // VXV (fixed from vxv)
+  "vectorspace",        // VXV
   "cortex",            // CTXC
-  "numeraire"          // NMR (replaced bittensor which isn't available)
+  "numeraire"          // NMR
 ];
 
 const formatPrice = (price: string) => {
@@ -41,7 +41,10 @@ const AICryptos = () => {
     queryKey: ["ai-assets"],
     queryFn: async () => {
       console.log("Fetching AI assets...");
-      const promises = AI_RELATED_TOKENS.map(id => fetchIndividualAsset(id));
+      const promises = AI_RELATED_TOKENS.map(id => {
+        console.log(`Fetching individual asset ${id}...`);
+        return fetchIndividualAsset(id);
+      });
       const results = await Promise.all(promises);
       const validResults = results.filter((asset): asset is Asset => asset !== null);
       console.log("Fetched AI assets:", validResults.length);
