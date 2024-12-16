@@ -8,6 +8,7 @@ export const coinIdMappings: Record<string, string> = {
   "tars ai": "tars-ai", // Add mapping for Tars AI
   "vectorspace": "vxv", // Add correct mapping for Vectorspace
   "fetch-ai": "fetch", // Add correct mapping for Fetch.ai
+  "injective-protocol": "injective", // Add correct mapping for Injective
 };
 
 export const getCoinApiId = (coinName: string): string => {
